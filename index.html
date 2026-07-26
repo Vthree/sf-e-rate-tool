@@ -685,21 +685,21 @@
       <div>
         <p class="eyebrow">Taiwan → Mainland China · E-Ship</p>
         <h1>E順遞<br>拆價運費表</h1>
-        <p class="deck">基本運費、燃油附加費、資源調節費各自成欄，各自設定折扣。選擇寄件日期後自動套用該週燃油費率，並同步顯示新台幣與人民幣估算。</p>
+        <p class="deck">基本運費、燃油附加費、資源調節費各自成欄，各自設定折扣。啟動本機服務後會同步順豐官方燃油資料，並依寄件日期套用費率、同步顯示新台幣與人民幣估算。</p>
       </div>
       <aside class="source-panel" aria-live="polite">
         <div class="source-heading">
           <h2>官方資料狀態</h2>
-          <span id="liveStatus" class="live-dot live">單檔離線版</span>
+          <span id="liveStatus" class="live-dot warn">準備同步</span>
         </div>
         <ul class="source-list">
           <li><span>燃油費率</span><strong id="sourceFuel">依寄件日期</strong></li>
           <li><span>資源調節費</span><strong id="sourceResource">NT$20 / kg</strong></li>
           <li><span>人民幣換算</span><strong id="sourceExchange">1 TWD = 0.217286 RMB</strong></li>
           <li><span>基本運費版本</span><strong id="sourceBase">2025年4月1日</strong></li>
-          <li><span>資料核對日</span><strong id="sourceChecked">2026年7月27日</strong></li>
+          <li><span>最後核對</span><strong id="sourceChecked">尚未同步</strong></li>
         </ul>
-        <a class="sync-button" href="https://htm.sf-express.com/we/ow/#/tw/tc/price-query" target="_blank" rel="noreferrer">開啟順豐官網核對價格</a>
+        <button id="syncButton" class="sync-button" type="button">立即同步順豐官網</button>
         <div id="sourceNotice" class="notice"></div>
       </aside>
     </header>
@@ -844,7 +844,7 @@
       </div>
       <div>
         <h3>資料與責任</h3>
-        <p>本單檔版內建 2026/5/11 至 2026/8/2 的官方燃油週期，超出範圍時保留手動費率並提示核對。人民幣依順豐頁面核對的換算因子估算，官方到付價採整數截尾；基本運費、調節費及最終收費仍以順豐收件時確認為準。</p>
+        <p>啟動 Windows 或 macOS 本機服務後，工具會從順豐官網抓取目前公布的燃油週期；同步失敗時才使用內建備援資料。人民幣依順豐頁面核對的換算因子估算，官方到付價採整數截尾；基本運費、調節費及最終收費仍以順豐收件時確認為準。</p>
         <div class="source-links">
           <a href="https://htm.sf-express.com/tw/tc/Customer_Zone/download_center/fuel_additional/" target="_blank" rel="noreferrer">燃油附加費來源</a>
           <a href="https://htm.sf-express.com/tw/tc/Customer_Zone/download_center/price_down/" target="_blank" rel="noreferrer">E順遞價目表來源</a>
@@ -877,7 +877,7 @@
       baseEffective: "2025年4月1日"
     };
 
-    const FUEL_SCHEDULE = [
+    let fuelSchedule = [
       { start: "2026-07-27", end: "2026-08-02", rate: 32.75 },
       { start: "2026-07-20", end: "2026-07-26", rate: 26.50 },
       { start: "2026-07-13", end: "2026-07-19", rate: 25.25 },
@@ -896,7 +896,7 @@
     const elements = Object.fromEntries([
       "destination","shippingDateTime","actualWeight","volumeDivisor","length","width","height","fuelRate","resourceRate","exchangeRate","currencyMode",
       "baseDiscount","fuelDiscount","resourceDiscount","fuelBasis","zoneHint","resultLabel","resultTotal","resultTotalRmb",
-      "resultBase","resultFuel","resultResource","weightNote","rateTableBody","liveStatus",
+      "resultBase","resultFuel","resultResource","weightNote","rateTableBody","syncButton","liveStatus",
       "sourceFuel","sourceResource","sourceExchange","sourceBase","sourceChecked","sourceNotice","tableMode","currencyCaption","csvButton","printButton"
     ].map((id) => [id, document.getElementById(id)]));
 
@@ -932,7 +932,7 @@
 
     function selectedFuelPeriod() {
       const date = elements.shippingDateTime.value.slice(0, 10);
-      return FUEL_SCHEDULE.find((item) => date >= item.start && date <= item.end) || null;
+      return fuelSchedule.find((item) => date >= item.start && date <= item.end) || null;
     }
 
     function applyFuelForShippingDate() {
@@ -944,9 +944,11 @@
         elements.sourceFuel.textContent = `${period.rate.toFixed(2)}% · ${displayDate(period.start)}-${displayDate(period.end)}`;
         elements.tableMode.textContent = "寄件日官方燃油";
       } else {
+        const sorted = [...fuelSchedule].sort((a, b) => a.start.localeCompare(b.start));
+        const range = sorted.length ? `${displayDate(sorted[0].start)}–${displayDate(sorted[sorted.length - 1].end)}` : "目前沒有可用週期";
         elements.sourceFuel.textContent = `${value("fuelRate", FALLBACK.fuelRate).toFixed(2)}% · 手動費率`;
         elements.tableMode.textContent = "日期超出內建週期";
-        elements.sourceNotice.textContent = "所選日期不在內建的官方燃油週期（2026/5/11–2026/8/2）內，燃油費率不會自動改動；請開啟順豐官網核對後手動輸入。";
+        elements.sourceNotice.textContent = `所選日期不在目前取得的官方燃油週期（${range}）內，燃油費率不會自動改動；請稍後同步或手動輸入。`;
         elements.sourceNotice.classList.add("show");
       }
     }
@@ -1049,6 +1051,71 @@
       elements.rateTableBody.innerHTML = rows.join("");
     }
 
+    function formatChecked(iso) {
+      return new Intl.DateTimeFormat("zh-TW", {
+        timeZone: "Asia/Taipei",
+        month: "numeric",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      }).format(new Date(iso));
+    }
+
+    async function syncLiveRates(force = false) {
+      elements.syncButton.disabled = true;
+      elements.syncButton.textContent = "正在連線順豐官網…";
+      elements.liveStatus.className = "live-dot warn";
+      elements.liveStatus.textContent = "同步中";
+      elements.sourceNotice.classList.remove("show");
+
+      try {
+        const response = await fetch(`/api/live-rates${force ? "?force=1" : ""}`, { cache: "no-store" });
+        if (!response.ok) throw new Error(`同步服務回傳 ${response.status}`);
+        const data = await response.json();
+        const warnings = [...(data.errors || [])];
+
+        if (data.fuel?.schedule?.length) {
+          fuelSchedule = data.fuel.schedule.map((item) => ({
+            start: item.startDate,
+            end: item.endDate,
+            rate: Number(item.rate)
+          })).filter((item) => item.start && item.end && Number.isFinite(item.rate));
+          applyFuelForShippingDate();
+        } else {
+          warnings.push("燃油費同步失敗，使用內建備援週期");
+          applyFuelForShippingDate();
+        }
+
+        if (data.resource) elements.resourceRate.value = data.resource.perKg;
+        if (data.baseSource) {
+          elements.sourceBase.textContent = data.baseSource.effectiveDate;
+          if (!data.baseSource.expected) warnings.push("官網 E順遞價目表版本已改變，請更新內建基本運費");
+        }
+
+        elements.sourceChecked.textContent = formatChecked(data.checkedAt);
+        elements.liveStatus.className = data.ok ? "live-dot live" : "live-dot warn";
+        elements.liveStatus.textContent = data.ok ? "官方已同步" : "部分備援";
+
+        if (warnings.length) {
+          elements.sourceNotice.textContent = warnings.join("；");
+          elements.sourceNotice.classList.add("show");
+        }
+      } catch (error) {
+        applyFuelForShippingDate();
+        elements.liveStatus.className = "live-dot warn";
+        elements.liveStatus.textContent = "使用備援";
+        elements.tableMode.textContent = "離線備援資料";
+        elements.sourceNotice.textContent = location.protocol === "file:"
+          ? "請使用 Windows 的 start.bat 或 macOS 的 start.command 啟動，直接開啟 HTML 無法跨網域同步順豐資料。"
+          : `同步失敗：${error.message}。目前使用內建備援週期。`;
+        elements.sourceNotice.classList.add("show");
+      } finally {
+        elements.syncButton.disabled = false;
+        elements.syncButton.textContent = "立即同步順豐官網";
+        updateResult();
+      }
+    }
+
     function saveSettings() {
       const settings = {};
       ["destination","shippingDateTime","actualWeight","volumeDivisor","length","width","height","fuelRate","resourceRate","exchangeRate","currencyMode","baseDiscount","fuelDiscount","resourceDiscount","fuelBasis"].forEach((id) => {
@@ -1112,9 +1179,11 @@
       }
       updateResult();
     });
+    elements.syncButton.addEventListener("click", () => syncLiveRates(true));
     elements.csvButton.addEventListener("click", exportCsv);
     elements.printButton.addEventListener("click", () => window.print());
     updateResult();
+    syncLiveRates(false);
   </script>
 </body>
 </html>
