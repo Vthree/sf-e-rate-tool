@@ -10,25 +10,42 @@
 
 請從 [Releases](https://github.com/Vthree/sf-e-rate-tool/releases) 下載最新跨平台版本。
 
+## 必要條件：Node.js
+
+自動同步版本需要 **Node.js 18 或更新版本**。Node.js 只用來在電腦上啟動本機服務、代替瀏覽器向順豐官網讀取公開資料，不需要安裝其他套件。
+
+安裝方式：
+
+1. 前往 [Node.js 官方網站](https://nodejs.org/)。
+2. 下載並安裝標示為 **LTS** 的版本。
+3. 安裝完成後關閉並重新開啟命令視窗或終端機。
+4. 可輸入 `node --version` 檢查；顯示 `v18`、`v20`、`v22` 或更高版本即可。
+
+若不安裝 Node.js，仍可直接開啟 `index.html` 使用內建備援資料，但無法自動同步最新燃油費。
+
 ## Windows 使用方法
 
-1. 安裝 [Node.js 18 或更新版本](https://nodejs.org/)。
-2. 解壓縮下載檔。
-3. 雙擊 `start.bat`。
-4. 瀏覽器會自動開啟本機工具。
-5. 保持命令視窗開啟；按 `Ctrl+C` 可停止服務。
+1. 安裝 Node.js LTS。
+2. 對下載的 ZIP 按右鍵，選擇「全部解壓縮」。
+3. 進入解壓縮後的 `sf-e-rate-tool` 資料夾。
+4. 雙擊 `start.bat`。
+5. 若 Windows 顯示安全警告，確認檔案來自此 GitHub 儲存庫後選擇繼續執行。
+6. 瀏覽器會自動開啟 `http://127.0.0.1:4173`；若連接埠已被使用，會自動改用下一個連接埠。
+7. 保持命令視窗開啟；按 `Ctrl+C` 可停止服務。
 
 `start.ps1` 會先尋找系統中的 Node.js；若電腦是從 Codex 執行，也會嘗試使用 Codex 內附的 Node.js。
 
 ## macOS 使用方法
 
-1. 安裝 [Node.js 18 或更新版本](https://nodejs.org/)。
-2. 解壓縮下載檔。
-3. 雙擊 `start.command`。
-4. 瀏覽器會自動開啟本機工具。
-5. 保持終端機視窗開啟；按 `Control+C` 可停止服務。
+1. 安裝 Node.js LTS。
+2. 雙擊下載的 ZIP 解壓縮。
+3. 進入解壓縮後的 `sf-e-rate-tool` 資料夾。
+4. 第一次啟動時，在 `start.command` 上按右鍵並選擇「打開」，再確認開啟。
+5. 之後可以直接雙擊 `start.command`。
+6. 瀏覽器會自動開啟 `http://127.0.0.1:4173`；若連接埠已被使用，會自動改用下一個連接埠。
+7. 保持終端機視窗開啟；按 `Control+C` 可停止服務。
 
-若 macOS 第一次阻擋啟動，請在 `start.command` 上按右鍵並選擇「打開」。如果檔案失去執行權限，可在終端機進入工具資料夾後執行：
+如果 `start.command` 失去執行權限，可開啟終端機、輸入 `cd `（後面保留一個空格），將工具資料夾拖進終端機後按 Enter，再執行：
 
 ```bash
 chmod +x start.command
