@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>E順遞｜雙幣拆價運費表</title>
+  <style>
+    :root {
+      --paper: #f4f0e7;
+      --paper-strong: #fffdf7;
+      --ink: #171816;
+      --muted: #6d6e68;
+      --line: #c8c2b6;
+      --line-soft: rgba(23, 24, 22, 0.12);
+      --signal: #d62924;
+      --signal-dark: #9f1e1a;
+      --signal-soft: #f4d3ce;
+      --zone-a: #c9342e;
+      --zone-a-soft: #fff0eb;
+      --zone-a-alt: #f9dfd8;
+      --zone-a-strong: #efb7ab;
+      --zone-b: #285548;
+      --zone-b-soft: #eaf2ed;
+      --zone-b-alt: #dce9e1;
+      --zone-b-strong: #b8d2c4;
+      --green: #0e7456;
+      --amber: #a45d00;
+      --shadow: 0 18px 55px rgba(41, 35, 28, 0.11);
+      --display: "Bodoni 72", "Bodoni MT", "Noto Serif TC", "PMingLiU", serif;
+      --body: "Aptos", "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, transparent 0 48px, rgba(214, 41, 36, 0.11) 48px 49px, transparent 49px),
+        repeating-linear-gradient(0deg, transparent 0 31px, rgba(23, 24, 22, 0.035) 31px 32px),
+        var(--paper);
+      font-family: var(--body);
+      font-variant-numeric: tabular-nums;
+    }
+
+    button, input, select { font: inherit; }
+
+    button, a { -webkit-tap-highlight-color: transparent; }
+
+    a { color: inherit; }
+
+    .shell {
+      width: min(1540px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 30px 0 72px;
+    }
+
+    .masthead {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.7fr);
+      gap: 34px;
+      min-height: 320px;
+      padding: 42px 46px;
+      color: white;
+      background: var(--ink);
+      box-shadow: var(--shadow);
+      animation: enter 620ms cubic-bezier(.2,.75,.2,1) both;
+    }
+
+    .masthead::before {
+      content: "";
+      position: absolute;
+      inset: -80px -80px auto auto;
+      width: 380px;
+      height: 380px;
+      border: 68px solid var(--signal);
+      border-radius: 50%;
+      opacity: 0.82;
+    }
+
+    .masthead::after {
+      content: "TW → CN";
+      position: absolute;
+      right: 26px;
+      bottom: 20px;
+      color: rgba(255,255,255,.08);
+      font: 700 clamp(60px, 9vw, 138px)/.8 var(--display);
+      letter-spacing: -0.05em;
+      white-space: nowrap;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 20px;
+      color: #f0c0b9;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 38px;
+      height: 3px;
+      background: var(--signal);
+    }
+
+    h1 {
+      position: relative;
+      z-index: 1;
+      max-width: 850px;
+      margin: 0;
+      font: 700 clamp(52px, 7vw, 112px)/.82 var(--display);
+      letter-spacing: -.055em;
+    }
+
+    .deck {
+      position: relative;
+      z-index: 1;
+      max-width: 700px;
+      margin: 28px 0 0;
+      color: rgba(255,255,255,.72);
+      font-size: 16px;
+      line-height: 1.85;
+    }
+
+    .source-panel {
+      position: relative;
+      z-index: 2;
+      align-self: end;
+      padding: 26px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.07);
+      backdrop-filter: blur(10px);
+    }
+
+    .source-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .source-heading h2 {
+      margin: 0;
+      font: 700 24px/1 var(--display);
+    }
+
+    .live-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .live-dot::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #aaa;
+      box-shadow: 0 0 0 5px rgba(255,255,255,.08);
+    }
+
+    .live-dot.live::before { background: #4fd1a2; }
+    .live-dot.warn::before { background: #ffb54a; }
+
+    .source-list {
+      display: grid;
+      gap: 10px;
+      margin: 0 0 20px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .source-list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      color: rgba(255,255,255,.66);
+      font-size: 13px;
+    }
+
+    .source-list strong { color: white; font-weight: 700; text-align: right; }
+
+    .sync-button {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      min-height: 45px;
+      border: 0;
+      color: white;
+      background: var(--signal);
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .sync-button:disabled { cursor: wait; opacity: .65; }
+
+    .notice {
+      display: none;
+      margin-top: 14px;
+      padding: 11px 13px;
+      color: #2c1b00;
+      background: #ffd895;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .notice.show { display: block; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      background: rgba(255,253,247,.9);
+      box-shadow: 0 10px 28px rgba(41,35,28,.06);
+      animation: rise 560ms 120ms cubic-bezier(.2,.75,.2,1) both;
+    }
+
+    .controls {
+      align-self: start;
+      position: sticky;
+      top: 20px;
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .card-head h2 {
+      margin: 0;
+      font: 700 31px/1 var(--display);
+      letter-spacing: -.03em;
+    }
+
+    .card-head span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .form-section {
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 16px;
+      color: var(--signal-dark);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .14em;
+    }
+
+    .section-title::before {
+      content: attr(data-step);
+      display: grid;
+      place-items: center;
+      width: 25px;
+      height: 25px;
+      color: white;
+      background: var(--signal);
+      border-radius: 50%;
+      letter-spacing: 0;
+    }
+
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .field-grid .wide { grid-column: 1 / -1; }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    input, select {
+      width: 100%;
+      height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      color: var(--ink);
+      background: var(--paper-strong);
+      padding: 0 12px;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--signal);
+      box-shadow: 0 0 0 3px var(--signal-soft);
+    }
+
+    .unit-field { position: relative; }
+    .unit-field input { padding-right: 50px; }
+    .unit-field b {
+      position: absolute;
+      right: 12px;
+      bottom: 13px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .zone-key {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .zone-key::before {
+      content: "";
+      flex: 0 0 8px;
+      height: 8px;
+      margin-top: 4px;
+      background: var(--signal);
+    }
+
+    .field-note {
+      grid-column: 1 / -1;
+      margin: -3px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .result-card {
+      padding: 24px;
+      color: white;
+      background: var(--signal);
+    }
+
+    .result-card small {
+      display: block;
+      color: rgba(255,255,255,.7);
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .result-total {
+      margin: 8px 0 3px;
+      font: 700 58px/1 var(--display);
+      letter-spacing: -.04em;
+    }
+
+    .result-rmb {
+      margin: 0 0 18px;
+      color: rgba(255,255,255,.78);
+      font: 700 27px/1.2 var(--display);
+      letter-spacing: -.02em;
+    }
+
+    .result-breakdown {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: rgba(255,255,255,.28);
+    }
+
+    .result-breakdown div {
+      padding: 12px 9px;
+      background: var(--signal);
+    }
+
+    .result-breakdown span {
+      display: block;
+      color: rgba(255,255,255,.66);
+      font-size: 10px;
+      margin-bottom: 5px;
+    }
+
+    .result-breakdown strong { font-size: 16px; }
+
+    .currency-pair {
+      display: inline-grid;
+      gap: 2px;
+      line-height: 1.15;
+      text-align: right;
+    }
+
+    .currency-secondary {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .result-breakdown .currency-pair { text-align: left; }
+    .result-breakdown .currency-secondary { color: rgba(255,255,255,.65); }
+
+    .weight-note {
+      margin: 14px 0 0;
+      color: rgba(255,255,255,.72);
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    .table-card { min-width: 0; }
+
+    .table-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .table-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 0 9px;
+      color: var(--green);
+      background: #dcebe5;
+      font-weight: 900;
+    }
+
+    .zone-legend {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border: 1px solid transparent;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .zone-legend::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      margin-right: 7px;
+      border-radius: 50%;
+    }
+
+    .zone-legend-a {
+      color: #81201c;
+      background: var(--zone-a-soft);
+      border-color: #e8b5aa;
+    }
+
+    .zone-legend-a::before { background: var(--zone-a); }
+
+    .zone-legend-b {
+      color: #193f35;
+      background: var(--zone-b-soft);
+      border-color: #aacabd;
+    }
+
+    .zone-legend-b::before { background: var(--zone-b); }
+
+    .toolbar-actions { display: flex; gap: 8px; }
+
+    .ghost-button {
+      min-height: 36px;
+      padding: 0 13px;
+      border: 1px solid var(--ink);
+      color: var(--ink);
+      background: transparent;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .table-scroll { overflow: auto; max-height: 1120px; }
+
+    table {
+      width: 100%;
+      min-width: 960px;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 12px;
+    }
+
+    th, td {
+      padding: 11px 12px;
+      text-align: right;
+      border-right: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft);
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      color: white;
+      background: var(--ink);
+      font-size: 11px;
+      letter-spacing: .04em;
+    }
+
+    thead tr:first-child th {
+      top: 0;
+      padding-top: 14px;
+      padding-bottom: 14px;
+      font: 700 18px/1 var(--display);
+      letter-spacing: 0;
+    }
+
+    thead tr:nth-child(2) th { top: 46px; }
+
+    th:first-child, td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      text-align: center;
+      background: #ece6da;
+      font-weight: 900;
+    }
+
+    thead th:first-child { z-index: 5; color: white; background: var(--ink); }
+
+    .zone-a { background: var(--zone-a); }
+    .zone-b { background: var(--zone-b); }
+
+    .subhead-a {
+      color: #6e1b18;
+      background: #efc5bb;
+    }
+
+    .subhead-b {
+      color: #173b31;
+      background: #bfd5ca;
+    }
+
+    th.zone-divider,
+    td.zone-divider {
+      border-left: 5px solid var(--paper-strong);
+    }
+
+    tbody td.zone-a-cell { background: var(--zone-a-soft); }
+    tbody td.zone-b-cell { background: var(--zone-b-soft); }
+    tbody tr:nth-child(even) td.zone-a-cell { background: var(--zone-a-alt); }
+    tbody tr:nth-child(even) td.zone-b-cell { background: var(--zone-b-alt); }
+
+    .total-column {
+      font-weight: 950;
+      box-shadow: inset 4px 0 0 rgba(23,24,22,.08);
+    }
+
+    tbody tr.selected td:first-child {
+      color: #5d1b17;
+      background: #f0c8bd;
+      box-shadow: inset 5px 0 0 var(--signal);
+    }
+
+    tbody tr.selected td.zone-a-cell {
+      color: #6f1714;
+      background: var(--zone-a-strong);
+      font-weight: 900;
+    }
+
+    tbody tr.selected td.zone-b-cell {
+      color: #123a2f;
+      background: var(--zone-b-strong);
+      font-weight: 900;
+    }
+
+    tbody tr:hover td.zone-a-cell { box-shadow: inset 0 0 0 999px rgba(201,52,46,.07); }
+    tbody tr:hover td.zone-b-cell { box-shadow: inset 0 0 0 999px rgba(40,85,72,.07); }
+    tbody tr:hover td.total-column { box-shadow: inset 4px 0 0 rgba(23,24,22,.14), inset 0 0 0 999px rgba(23,24,22,.025); }
+
+    .footnotes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 24px;
+      padding: 26px 28px;
+      border-top: 5px solid var(--ink);
+      color: var(--muted);
+      background: rgba(255,253,247,.68);
+      font-size: 12px;
+      line-height: 1.75;
+      animation: rise 560ms 220ms cubic-bezier(.2,.75,.2,1) both;
+    }
+
+    .footnotes h3 {
+      margin: 0 0 8px;
+      color: var(--ink);
+      font: 700 22px/1 var(--display);
+    }
+
+    .footnotes p { margin: 0; }
+
+    .source-links { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; }
+    .source-links a { color: var(--signal-dark); font-weight: 800; }
+
+    @keyframes enter {
+      from { opacity: 0; transform: translateY(16px) scale(.992); }
+      to { opacity: 1; transform: none; }
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(22px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    @media (max-width: 980px) {
+      .shell { width: min(100% - 24px, 900px); padding-top: 12px; }
+      .masthead { grid-template-columns: 1fr; padding: 34px 30px; }
+      .source-panel { max-width: 560px; }
+      .workspace { grid-template-columns: 1fr; }
+      .controls { position: static; }
+      .footnotes { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      body { background-position-x: -28px; }
+      .shell { width: 100%; padding: 0 0 50px; }
+      .masthead { min-height: 0; padding: 28px 20px 24px; }
+      .masthead::before { width: 240px; height: 240px; border-width: 42px; }
+      h1 { font-size: 52px; }
+      .deck { font-size: 14px; }
+      .source-panel { padding: 20px; }
+      .workspace { margin-top: 12px; gap: 12px; }
+      .card { border-left: 0; border-right: 0; }
+      .field-grid { grid-template-columns: 1fr; }
+      .field-grid .wide { grid-column: auto; }
+      .table-toolbar { align-items: flex-start; flex-direction: column; }
+      .table-meta { align-items: flex-start; }
+      .result-total { font-size: 50px; }
+      .footnotes { margin-top: 12px; padding: 22px 20px; }
+    }
+
+    @media print {
+      body { background: white; }
+      .shell { width: 100%; padding: 0; }
+      .masthead { min-height: 0; padding: 20px; box-shadow: none; }
+      .source-panel, .controls, .toolbar-actions, .footnotes { display: none !important; }
+      .workspace { display: block; margin: 12px 0 0; }
+      .card { box-shadow: none; border: 0; }
+      .table-scroll { overflow: visible; max-height: none; }
+      table { min-width: 0; font-size: 9px; }
+      th, td { padding: 5px 4px; }
+      th, td { position: static !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">Taiwan → Mainland China · E-Ship</p>
+        <h1>E順遞<br>拆價運費表</h1>
+        <p class="deck">基本運費、燃油附加費、資源調節費各自成欄，各自設定折扣。選擇寄件日期後自動套用該週燃油費率，並同步顯示新台幣與人民幣估算。</p>
+      </div>
+      <aside class="source-panel" aria-live="polite">
+        <div class="source-heading">
+          <h2>官方資料狀態</h2>
+          <span id="liveStatus" class="live-dot live">單檔離線版</span>
+        </div>
+        <ul class="source-list">
+          <li><span>燃油費率</span><strong id="sourceFuel">依寄件日期</strong></li>
+          <li><span>資源調節費</span><strong id="sourceResource">NT$20 / kg</strong></li>
+          <li><span>人民幣換算</span><strong id="sourceExchange">1 TWD = 0.217286 RMB</strong></li>
+          <li><span>基本運費版本</span><strong id="sourceBase">2025年4月1日</strong></li>
+          <li><span>資料核對日</span><strong id="sourceChecked">2026年7月27日</strong></li>
+        </ul>
+        <a class="sync-button" href="https://htm.sf-express.com/we/ow/#/tw/tc/price-query" target="_blank" rel="noreferrer">開啟順豐官網核對價格</a>
+        <div id="sourceNotice" class="notice"></div>
+      </aside>
+    </header>
+
+    <section class="workspace">
+      <aside class="card controls">
+        <div class="card-head">
+          <h2>試算條件</h2>
+          <span>Calculator</span>
+        </div>
+
+        <div class="form-section">
+          <h3 class="section-title" data-step="1">貨件資料</h3>
+          <div class="field-grid">
+            <label class="wide">目的地
+              <select id="destination"></select>
+            </label>
+            <label class="wide">預計寄件日期與時間
+              <input id="shippingDateTime" type="datetime-local">
+            </label>
+            <label class="unit-field">實際重量
+              <input id="actualWeight" type="number" min="0.1" max="20" step="0.1" value="1">
+              <b>kg</b>
+            </label>
+            <label class="unit-field">材積除數
+              <input id="volumeDivisor" type="number" min="1" step="1" value="6000">
+              <b>÷</b>
+            </label>
+            <label class="unit-field">長
+              <input id="length" type="number" min="0" step="0.1" value="1">
+              <b>cm</b>
+            </label>
+            <label class="unit-field">寬
+              <input id="width" type="number" min="0" step="0.1" value="1">
+              <b>cm</b>
+            </label>
+            <label class="unit-field wide">高
+              <input id="height" type="number" min="0" step="0.1" value="1">
+              <b>cm</b>
+            </label>
+            <p class="field-note">燃油費以寄件日期所落入的順豐週期計算；時間不影響燃油費率，但會保留在試算條件中。</p>
+          </div>
+          <div id="zoneHint" class="zone-key"></div>
+        </div>
+
+        <div class="form-section">
+          <h3 class="section-title" data-step="2">費率與折扣</h3>
+          <div class="field-grid">
+            <label class="unit-field">燃油費率
+              <input id="fuelRate" type="number" min="0" step="0.01" value="32.75">
+              <b>%</b>
+            </label>
+            <label class="unit-field">調節費
+              <input id="resourceRate" type="number" min="0" step="1" value="20">
+              <b>元/kg</b>
+            </label>
+            <label class="unit-field">台幣換人民幣
+              <input id="exchangeRate" type="number" min="0" step="0.000001" value="0.217286">
+              <b>RMB</b>
+            </label>
+            <label>表格幣別
+              <select id="currencyMode">
+                <option value="both">台幣＋人民幣</option>
+                <option value="twd">只顯示台幣</option>
+                <option value="rmb">只顯示人民幣</option>
+              </select>
+            </label>
+            <label class="unit-field">基本運費折扣
+              <input id="baseDiscount" type="number" min="0" max="200" step="1" value="100">
+              <b>%</b>
+            </label>
+            <label class="unit-field">燃油費折扣
+              <input id="fuelDiscount" type="number" min="0" max="200" step="1" value="100">
+              <b>%</b>
+            </label>
+            <label class="unit-field">調節費折扣
+              <input id="resourceDiscount" type="number" min="0" max="200" step="1" value="100">
+              <b>%</b>
+            </label>
+            <label>燃油計算基礎
+              <select id="fuelBasis">
+                <option value="list">公開基本運費（不隨運費折扣）</option>
+                <option value="discounted">折後基本運費</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="result-card" aria-live="polite">
+          <small id="resultLabel">E順遞 · 其他省份 · 1 kg</small>
+          <div id="resultTotal" class="result-total">NT$284</div>
+          <div id="resultTotalRmb" class="result-rmb">約 RMB 61</div>
+          <div class="result-breakdown">
+            <div><span>折後運費</span><strong id="resultBase">199</strong></div>
+            <div><span>燃油費</span><strong id="resultFuel">65</strong></div>
+            <div><span>調節費</span><strong id="resultResource">20</strong></div>
+          </div>
+          <p id="weightNote" class="weight-note"></p>
+        </div>
+      </aside>
+
+      <section class="card table-card">
+        <div class="card-head">
+          <h2>完整重量級距</h2>
+          <span>0.5–20 kg</span>
+        </div>
+        <div class="table-toolbar">
+          <div class="table-meta">
+            <span id="tableMode" class="tag">寄件日官方燃油</span>
+            <span class="zone-legend zone-legend-a">A區 · 暖紅</span>
+            <span class="zone-legend zone-legend-b">B區 · 冷綠</span>
+            <span id="currencyCaption">金額單位：新台幣＋人民幣，已依目前折扣重算</span>
+          </div>
+          <div class="toolbar-actions">
+            <button id="csvButton" class="ghost-button" type="button">匯出 CSV</button>
+            <button id="printButton" class="ghost-button" type="button">列印</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table aria-label="E順遞拆價運費表">
+            <thead>
+              <tr>
+                <th rowspan="2">重量</th>
+                <th class="zone-a" colspan="4">A區 · 福建／廣東／江西／海南／廣西</th>
+                <th class="zone-b" colspan="4">B區 · 中國大陸其他服務省份</th>
+              </tr>
+              <tr>
+                <th class="subhead-a">基本運費</th><th class="subhead-a">燃油費</th><th class="subhead-a">調節費</th><th class="subhead-a">總運費</th>
+                <th class="subhead-b zone-divider">基本運費</th><th class="subhead-b">燃油費</th><th class="subhead-b">調節費</th><th class="subhead-b">總運費</th>
+              </tr>
+            </thead>
+            <tbody id="rateTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <footer class="footnotes">
+      <div>
+        <h3>計費規則</h3>
+        <p>計費重量取實際重量與材積重量較大者；材積重量＝長×寬×高÷6000。20 kg 以下以 0.5 kg 進位。本工具依 E順遞公開價目表製作，最高顯示 20 kg。</p>
+      </div>
+      <div>
+        <h3>資料與責任</h3>
+        <p>本單檔版內建 2026/5/11 至 2026/8/2 的官方燃油週期，超出範圍時保留手動費率並提示核對。人民幣依順豐頁面核對的換算因子估算，官方到付價採整數截尾；基本運費、調節費及最終收費仍以順豐收件時確認為準。</p>
+        <div class="source-links">
+          <a href="https://htm.sf-express.com/tw/tc/Customer_Zone/download_center/fuel_additional/" target="_blank" rel="noreferrer">燃油附加費來源</a>
+          <a href="https://htm.sf-express.com/tw/tc/Customer_Zone/download_center/price_down/" target="_blank" rel="noreferrer">E順遞價目表來源</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    const BASE_RATES = {
+      A: [142,151,208,266,323,380,392,450,509,568,626,685,744,802,861,920,978,1037,1095,1154,1213,1271,1330,1389,1447,1506,1565,1623,1682,1741,1799,1858,1917,1975,2034,2093,2151,2210,2268,2300],
+      B: [185,199,280,363,444,525,533,608,682,757,831,905,980,1054,1129,1203,1277,1352,1426,1501,1575,1649,1724,1798,1873,1947,2021,2096,2170,2245,2319,2393,2468,2542,2617,2691,2765,2840,2914,2940]
+    };
+
+    const DESTINATIONS = [
+      ["北京市","B"],["天津市","B"],["上海市","B"],["重慶市","B"],
+      ["福建省","A"],["廣東省","A"],["江西省","A"],["海南省","A"],["廣西壯族自治區","A"],
+      ["河北省","B"],["山西省","B"],["遼寧省","B"],["吉林省","B"],["黑龍江省","B"],
+      ["江蘇省","B"],["浙江省","B"],["安徽省","B"],["山東省","B"],["河南省","B"],
+      ["湖北省","B"],["湖南省","B"],["四川省","B"],["貴州省","B"],["雲南省","B"],
+      ["陝西省","B"],["甘肅省","B"],["青海省","B"],["內蒙古自治區","B"],
+      ["寧夏回族自治區","B"],["新疆維吾爾自治區","B"],["西藏自治區","NONE"]
+    ];
+
+    const FALLBACK = {
+      fuelRate: 32.75,
+      fuelPeriod: "2026/7/27-2026/8/2",
+      resourceRate: 20,
+      exchangeRate: 0.217286125,
+      baseEffective: "2025年4月1日"
+    };
+
+    const FUEL_SCHEDULE = [
+      { start: "2026-07-27", end: "2026-08-02", rate: 32.75 },
+      { start: "2026-07-20", end: "2026-07-26", rate: 26.50 },
+      { start: "2026-07-13", end: "2026-07-19", rate: 25.25 },
+      { start: "2026-07-06", end: "2026-07-12", rate: 25.00 },
+      { start: "2026-06-29", end: "2026-07-05", rate: 25.50 },
+      { start: "2026-06-22", end: "2026-06-28", rate: 29.00 },
+      { start: "2026-06-15", end: "2026-06-21", rate: 31.25 },
+      { start: "2026-06-08", end: "2026-06-14", rate: 30.25 },
+      { start: "2026-06-01", end: "2026-06-07", rate: 40.50 },
+      { start: "2026-05-25", end: "2026-05-31", rate: 41.00 },
+      { start: "2026-05-18", end: "2026-05-24", rate: 39.75 },
+      { start: "2026-05-11", end: "2026-05-17", rate: 41.25 }
+    ];
+
+    const money = new Intl.NumberFormat("zh-TW", { maximumFractionDigits: 0 });
+    const elements = Object.fromEntries([
+      "destination","shippingDateTime","actualWeight","volumeDivisor","length","width","height","fuelRate","resourceRate","exchangeRate","currencyMode",
+      "baseDiscount","fuelDiscount","resourceDiscount","fuelBasis","zoneHint","resultLabel","resultTotal","resultTotalRmb",
+      "resultBase","resultFuel","resultResource","weightNote","rateTableBody","liveStatus",
+      "sourceFuel","sourceResource","sourceExchange","sourceBase","sourceChecked","sourceNotice","tableMode","currencyCaption","csvButton","printButton"
+    ].map((id) => [id, document.getElementById(id)]));
+
+    function value(id, fallback = 0) {
+      const number = Number(elements[id].value);
+      return Number.isFinite(number) ? number : fallback;
+    }
+
+    function roundMoney(number) { return Math.round(Number(number) || 0); }
+
+    function rmbValue(twd) {
+      return Math.floor(Math.max(0, Number(twd) || 0) * value("exchangeRate", FALLBACK.exchangeRate) + 1e-9);
+    }
+
+    function currencyCell(twd) {
+      const mode = elements.currencyMode.value;
+      const twdText = money.format(twd);
+      const rmbText = `RMB ${money.format(rmbValue(twd))}`;
+      if (mode === "twd") return twdText;
+      if (mode === "rmb") return rmbText;
+      return `<span class="currency-pair"><span>${twdText}</span><span class="currency-secondary">${rmbText}</span></span>`;
+    }
+
+    function localDateTimeValue(date = new Date()) {
+      const shifted = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+      return shifted.toISOString().slice(0, 16);
+    }
+
+    function displayDate(isoDate) {
+      const [year, month, day] = isoDate.split("-");
+      return `${year}/${Number(month)}/${Number(day)}`;
+    }
+
+    function selectedFuelPeriod() {
+      const date = elements.shippingDateTime.value.slice(0, 10);
+      return FUEL_SCHEDULE.find((item) => date >= item.start && date <= item.end) || null;
+    }
+
+    function applyFuelForShippingDate() {
+      const period = selectedFuelPeriod();
+      elements.sourceNotice.classList.remove("show");
+
+      if (period) {
+        elements.fuelRate.value = period.rate.toFixed(2);
+        elements.sourceFuel.textContent = `${period.rate.toFixed(2)}% · ${displayDate(period.start)}-${displayDate(period.end)}`;
+        elements.tableMode.textContent = "寄件日官方燃油";
+      } else {
+        elements.sourceFuel.textContent = `${value("fuelRate", FALLBACK.fuelRate).toFixed(2)}% · 手動費率`;
+        elements.tableMode.textContent = "日期超出內建週期";
+        elements.sourceNotice.textContent = "所選日期不在內建的官方燃油週期（2026/5/11–2026/8/2）內，燃油費率不會自動改動；請開啟順豐官網核對後手動輸入。";
+        elements.sourceNotice.classList.add("show");
+      }
+    }
+
+    function getChargeableWeight() {
+      const actual = Math.max(0.1, value("actualWeight", 1));
+      const divisor = Math.max(1, value("volumeDivisor", 6000));
+      const volumetric = Math.max(0, value("length")) * Math.max(0, value("width")) * Math.max(0, value("height")) / divisor;
+      const raw = Math.max(actual, volumetric);
+      const charged = raw <= 20 ? Math.ceil(raw * 2 - 1e-9) / 2 : Math.ceil(raw - 1e-9);
+      return { actual, volumetric, raw, charged };
+    }
+
+    function getDestination() {
+      const option = elements.destination.selectedOptions[0];
+      return {
+        name: option?.textContent || "北京市",
+        zone: option?.dataset.zone || "B"
+      };
+    }
+
+    function calculate(zone, weight) {
+      if (!BASE_RATES[zone] || weight > 20) return null;
+      const index = Math.max(0, Math.min(39, Math.round(weight * 2) - 1));
+      const listBase = BASE_RATES[zone][index];
+      const baseNet = roundMoney(listBase * value("baseDiscount", 100) / 100);
+      const fuelBase = elements.fuelBasis.value === "discounted" ? baseNet : listBase;
+      const fuelNet = roundMoney(fuelBase * value("fuelRate", FALLBACK.fuelRate) / 100 * value("fuelDiscount", 100) / 100);
+      const resourceNet = roundMoney(weight * value("resourceRate", FALLBACK.resourceRate) * value("resourceDiscount", 100) / 100);
+      return { listBase, baseNet, fuelNet, resourceNet, total: baseNet + fuelNet + resourceNet };
+    }
+
+    function populateDestinations() {
+      elements.destination.innerHTML = DESTINATIONS.map(([name, zone]) =>
+        `<option value="${name}" data-zone="${zone}" ${name === "北京市" ? "selected" : ""}>${name}</option>`
+      ).join("");
+    }
+
+    function updateResult() {
+      const destination = getDestination();
+      const weight = getChargeableWeight();
+      const unavailable = destination.zone === "NONE" || weight.charged > 20;
+      const currencyLabels = {
+        both: "金額單位：新台幣＋人民幣，已依目前折扣重算",
+        twd: "金額單位：新台幣，已依目前折扣重算",
+        rmb: "金額單位：人民幣估算，已依目前折扣重算"
+      };
+
+      elements.sourceExchange.textContent = `1 TWD = ${value("exchangeRate", FALLBACK.exchangeRate).toFixed(6)} RMB`;
+      elements.sourceResource.textContent = `NT$${money.format(value("resourceRate", FALLBACK.resourceRate))} / kg`;
+      elements.currencyCaption.textContent = currencyLabels[elements.currencyMode.value] || currencyLabels.both;
+
+      elements.zoneHint.textContent = destination.zone === "A"
+        ? "A區：福建、廣東、江西、海南、廣西。"
+        : destination.zone === "B"
+          ? "B區：中國大陸其他服務省份及直轄市。"
+          : "西藏自治區目前在附件標示為無服務。";
+
+      if (unavailable) {
+        elements.resultLabel.textContent = `E順遞 · ${destination.name}`;
+        elements.resultTotal.textContent = "不適用";
+        elements.resultTotalRmb.textContent = "";
+        elements.resultBase.textContent = "—";
+        elements.resultFuel.textContent = "—";
+        elements.resultResource.textContent = "—";
+        elements.weightNote.textContent = destination.zone === "NONE"
+          ? "此目的地在目前 E順遞價目範圍內標示為無服務。"
+          : "公開 E順遞價目表最高為 20 kg，請改用其他順豐產品或洽客服。";
+      } else {
+        const result = calculate(destination.zone, weight.charged);
+        elements.resultLabel.textContent = `E順遞 · ${destination.zone}區 · 計費 ${weight.charged} kg`;
+        elements.resultTotal.textContent = `NT$${money.format(result.total)}`;
+        elements.resultTotalRmb.textContent = `約 RMB ${money.format(rmbValue(result.total))}`;
+        elements.resultBase.innerHTML = currencyCell(result.baseNet);
+        elements.resultFuel.innerHTML = currencyCell(result.fuelNet);
+        elements.resultResource.innerHTML = currencyCell(result.resourceNet);
+        const shippingText = elements.shippingDateTime.value
+          ? new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(elements.shippingDateTime.value))
+          : "未指定";
+        elements.weightNote.textContent = `寄件 ${shippingText} · 實重 ${weight.actual.toFixed(2)} kg · 材積重 ${weight.volumetric.toFixed(2)} kg · 公開原運費 NT$${money.format(result.listBase)}`;
+      }
+
+      renderTable(weight.charged);
+      saveSettings();
+    }
+
+    function renderTable(selectedWeight) {
+      const rows = [];
+      for (let index = 0; index < 40; index += 1) {
+        const weight = (index + 1) / 2;
+        const a = calculate("A", weight);
+        const b = calculate("B", weight);
+        rows.push(`
+          <tr class="${weight === selectedWeight ? "selected" : ""}">
+            <td>${weight.toFixed(1)}</td>
+            <td class="zone-a-cell">${currencyCell(a.baseNet)}</td><td class="zone-a-cell">${currencyCell(a.fuelNet)}</td><td class="zone-a-cell">${currencyCell(a.resourceNet)}</td><td class="zone-a-cell total-column">${currencyCell(a.total)}</td>
+            <td class="zone-b-cell zone-divider">${currencyCell(b.baseNet)}</td><td class="zone-b-cell">${currencyCell(b.fuelNet)}</td><td class="zone-b-cell">${currencyCell(b.resourceNet)}</td><td class="zone-b-cell total-column">${currencyCell(b.total)}</td>
+          </tr>`);
+      }
+      elements.rateTableBody.innerHTML = rows.join("");
+    }
+
+    function saveSettings() {
+      const settings = {};
+      ["destination","shippingDateTime","actualWeight","volumeDivisor","length","width","height","fuelRate","resourceRate","exchangeRate","currencyMode","baseDiscount","fuelDiscount","resourceDiscount","fuelBasis"].forEach((id) => {
+        settings[id] = elements[id].value;
+      });
+      localStorage.setItem("sf-e-rate-settings", JSON.stringify(settings));
+    }
+
+    function loadSettings() {
+      try {
+        const settings = JSON.parse(localStorage.getItem("sf-e-rate-settings") || "{}");
+        Object.entries(settings).forEach(([id, saved]) => {
+          if (elements[id]) elements[id].value = saved;
+        });
+      } catch (_) {
+        localStorage.removeItem("sf-e-rate-settings");
+      }
+    }
+
+    function exportCsv() {
+      const headers = [
+        "重量(kg)",
+        "A區基本運費(TWD)","A區基本運費(RMB)","A區燃油費(TWD)","A區燃油費(RMB)","A區調節費(TWD)","A區調節費(RMB)","A區總運費(TWD)","A區總運費(RMB)",
+        "B區基本運費(TWD)","B區基本運費(RMB)","B區燃油費(TWD)","B區燃油費(RMB)","B區調節費(TWD)","B區調節費(RMB)","B區總運費(TWD)","B區總運費(RMB)"
+      ];
+      const rows = [headers];
+      for (let index = 0; index < 40; index += 1) {
+        const weight = (index + 1) / 2;
+        const a = calculate("A", weight);
+        const b = calculate("B", weight);
+        rows.push([
+          weight.toFixed(1),
+          a.baseNet,rmbValue(a.baseNet),a.fuelNet,rmbValue(a.fuelNet),a.resourceNet,rmbValue(a.resourceNet),a.total,rmbValue(a.total),
+          b.baseNet,rmbValue(b.baseNet),b.fuelNet,rmbValue(b.fuelNet),b.resourceNet,rmbValue(b.resourceNet),b.total,rmbValue(b.total)
+        ]);
+      }
+      const csv = "\ufeff" + rows.map((row) => row.join(",")).join("\r\n");
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      link.download = `E順遞拆價運費表_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    populateDestinations();
+    loadSettings();
+    if (!elements.shippingDateTime.value) elements.shippingDateTime.value = localDateTimeValue();
+    applyFuelForShippingDate();
+    document.querySelectorAll("input, select").forEach((control) => {
+      control.addEventListener("input", updateResult);
+    });
+    elements.shippingDateTime.addEventListener("change", () => {
+      applyFuelForShippingDate();
+      updateResult();
+    });
+    elements.fuelRate.addEventListener("change", () => {
+      const period = selectedFuelPeriod();
+      if (!period || Math.abs(value("fuelRate") - period.rate) > 0.001) {
+        elements.sourceFuel.textContent = `${value("fuelRate", FALLBACK.fuelRate).toFixed(2)}% · 手動費率`;
+        elements.tableMode.textContent = "手動燃油費率";
+      }
+      updateResult();
+    });
+    elements.csvButton.addEventListener("click", exportCsv);
+    elements.printButton.addEventListener("click", () => window.print());
+    updateResult();
+  </script>
+</body>
+</html>
