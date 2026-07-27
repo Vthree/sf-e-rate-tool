@@ -685,7 +685,7 @@
       <div>
         <p class="eyebrow">Taiwan → Mainland China · E-Ship</p>
         <h1>E順遞<br>拆價運費表</h1>
-        <p class="deck">基本運費、燃油附加費、資源調節費各自成欄，各自設定折扣。啟動本機服務後會同步順豐官方燃油資料，並依寄件日期套用費率、同步顯示新台幣與人民幣估算。</p>
+        <p class="deck">基本運費、燃油附加費、資源調節費各自成欄，各自設定折扣。啟動本機服務後會同步順豐官方資料；人民幣直接採用官網「到付價」拆解，不經台幣匯率換算。</p>
       </div>
       <aside class="source-panel" aria-live="polite">
         <div class="source-heading">
@@ -695,7 +695,7 @@
         <ul class="source-list">
           <li><span>燃油費率</span><strong id="sourceFuel">依寄件日期</strong></li>
           <li><span>資源調節費</span><strong id="sourceResource">NT$20 / kg</strong></li>
-          <li><span>人民幣換算</span><strong id="sourceExchange">1 TWD = 0.217286 RMB</strong></li>
+          <li><span>人民幣到付價</span><strong id="sourceRmb">等待官方查價</strong></li>
           <li><span>基本運費版本</span><strong id="sourceBase">2025年4月1日</strong></li>
           <li><span>最後核對</span><strong id="sourceChecked">尚未同步</strong></li>
         </ul>
@@ -756,10 +756,6 @@
               <input id="resourceRate" type="number" min="0" step="1" value="20">
               <b>元/kg</b>
             </label>
-            <label class="unit-field">台幣換人民幣
-              <input id="exchangeRate" type="number" min="0" step="0.000001" value="0.217286">
-              <b>RMB</b>
-            </label>
             <label>表格幣別
               <select id="currencyMode">
                 <option value="both">台幣＋人民幣</option>
@@ -791,7 +787,7 @@
         <div class="result-card" aria-live="polite">
           <small id="resultLabel">E順遞 · 其他省份 · 1 kg</small>
           <div id="resultTotal" class="result-total">NT$284</div>
-          <div id="resultTotalRmb" class="result-rmb">約 RMB 61.6</div>
+          <div id="resultTotalRmb" class="result-rmb">RMB 正在同步</div>
           <div class="result-breakdown">
             <div><span>折後運費</span><strong id="resultBase">199</strong></div>
             <div><span>燃油費</span><strong id="resultFuel">65</strong></div>
@@ -811,7 +807,7 @@
             <span id="tableMode" class="tag">寄件日官方燃油</span>
             <span class="zone-legend zone-legend-a">A區 · 暖紅</span>
             <span class="zone-legend zone-legend-b">B區 · 冷綠</span>
-            <span id="currencyCaption">金額單位：新台幣＋人民幣，已依目前折扣重算</span>
+            <span id="currencyCaption">人民幣為順豐官網到付價，已依目前折扣重算</span>
           </div>
           <div class="toolbar-actions">
             <button id="csvButton" class="ghost-button" type="button">匯出 CSV</button>
@@ -844,10 +840,11 @@
       </div>
       <div>
         <h3>資料與責任</h3>
-        <p>啟動 Windows 或 macOS 本機服務後，工具會從順豐官網抓取目前公布的燃油週期；同步失敗時才使用內建備援資料。人民幣各拆解項目保留小數點後一位，人民幣總運費為三項相加，因此可能與順豐網站顯示的整數到付價不同；最終收費仍以順豐結算為準。</p>
+        <p>啟動 Windows 或 macOS 本機服務後，工具會從順豐官網抓取燃油週期，以及 E順遞「到付價」的人民幣基本運費、燃油附加費、資源調節費與總運費。人民幣不由台幣換算；同步失敗時顯示「—」，不產生估算值。最終收費仍以順豐結算為準。</p>
         <div class="source-links">
           <a href="https://htm.sf-express.com/tw/tc/Customer_Zone/download_center/fuel_additional/" target="_blank" rel="noreferrer">燃油附加費來源</a>
           <a href="https://htm.sf-express.com/tw/tc/Customer_Zone/download_center/price_down/" target="_blank" rel="noreferrer">E順遞價目表來源</a>
+          <a href="https://htm.sf-express.com/we/ow/#/tw/tc/price-query" target="_blank" rel="noreferrer">人民幣到付價來源</a>
         </div>
       </div>
     </footer>
@@ -873,9 +870,12 @@
       fuelRate: 32.75,
       fuelPeriod: "2026/7/27-2026/8/2",
       resourceRate: 20,
-      exchangeRate: 0.217286125,
       baseEffective: "2025年4月1日"
     };
+
+    let officialRmbRates = { A: {}, B: {} };
+    let officialRmbMeta = { count: 0, expectedCount: 80, checkedAt: null, shippingTime: "" };
+    let syncSequence = 0;
 
     let fuelSchedule = [
       { start: "2026-07-27", end: "2026-08-02", rate: 32.75 },
@@ -895,10 +895,10 @@
     const money = new Intl.NumberFormat("zh-TW", { maximumFractionDigits: 0 });
     const rmbMoney = new Intl.NumberFormat("zh-TW", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const elements = Object.fromEntries([
-      "destination","shippingDateTime","actualWeight","volumeDivisor","length","width","height","fuelRate","resourceRate","exchangeRate","currencyMode",
+      "destination","shippingDateTime","actualWeight","volumeDivisor","length","width","height","fuelRate","resourceRate","currencyMode",
       "baseDiscount","fuelDiscount","resourceDiscount","fuelBasis","zoneHint","resultLabel","resultTotal","resultTotalRmb",
       "resultBase","resultFuel","resultResource","weightNote","rateTableBody","syncButton","liveStatus",
-      "sourceFuel","sourceResource","sourceExchange","sourceBase","sourceChecked","sourceNotice","tableMode","currencyCaption","csvButton","printButton"
+      "sourceFuel","sourceResource","sourceRmb","sourceBase","sourceChecked","sourceNotice","tableMode","currencyCaption","csvButton","printButton"
     ].map((id) => [id, document.getElementById(id)]));
 
     function value(id, fallback = 0) {
@@ -908,23 +908,30 @@
 
     function roundMoney(number) { return Math.round(Number(number) || 0); }
 
-    function rmbValue(twd) {
-      const converted = Math.max(0, Number(twd) || 0) * value("exchangeRate", FALLBACK.exchangeRate);
-      return Math.round((converted + Number.EPSILON) * 10) / 10;
+    function roundRmb(number) {
+      return Math.round((Math.max(0, Number(number) || 0) + Number.EPSILON) * 10) / 10;
     }
 
-    function rmbBreakdown(result) {
-      const base = rmbValue(result.baseNet);
-      const fuel = rmbValue(result.fuelNet);
-      const resource = rmbValue(result.resourceNet);
-      const total = Math.round((base + fuel + resource + Number.EPSILON) * 10) / 10;
-      return { base, fuel, resource, total };
+    function rmbBreakdown(zone, weight) {
+      const source = officialRmbRates[zone]?.[Number(weight).toFixed(1)];
+      if (!source) return null;
+
+      const baseFactor = value("baseDiscount", 100) / 100;
+      const fuelFactor = value("fuelDiscount", 100) / 100;
+      const resourceFactor = value("resourceDiscount", 100) / 100;
+      const discountedFuelFactor = elements.fuelBasis.value === "discounted" ? baseFactor : 1;
+      const base = roundRmb(source.base * baseFactor);
+      const fuel = roundRmb(source.fuel * fuelFactor * discountedFuelFactor);
+      const resource = roundRmb(source.resource * resourceFactor);
+      const unchanged = baseFactor === 1 && fuelFactor === 1 && resourceFactor === 1 && discountedFuelFactor === 1;
+      const total = unchanged ? roundRmb(source.total) : roundRmb(base + fuel + resource);
+      return { base, fuel, resource, total, source };
     }
 
-    function currencyCell(twd, rmb = rmbValue(twd)) {
+    function currencyCell(twd, rmb) {
       const mode = elements.currencyMode.value;
       const twdText = money.format(twd);
-      const rmbText = `RMB ${rmbMoney.format(rmb)}`;
+      const rmbText = rmb == null ? "RMB —" : `RMB ${rmbMoney.format(rmb)}`;
       if (mode === "twd") return twdText;
       if (mode === "rmb") return rmbText;
       return `<span class="currency-pair"><span>${twdText}</span><span class="currency-secondary">${rmbText}</span></span>`;
@@ -1002,12 +1009,11 @@
       const weight = getChargeableWeight();
       const unavailable = destination.zone === "NONE" || weight.charged > 20;
       const currencyLabels = {
-        both: "金額單位：新台幣＋人民幣，已依目前折扣重算",
+        both: "新台幣依價目表計算；人民幣為順豐官網到付價，已依目前折扣重算",
         twd: "金額單位：新台幣，已依目前折扣重算",
-        rmb: "金額單位：人民幣估算，已依目前折扣重算"
+        rmb: "金額單位：人民幣，來源為順豐官網到付價，已依目前折扣重算"
       };
 
-      elements.sourceExchange.textContent = `1 TWD = ${value("exchangeRate", FALLBACK.exchangeRate).toFixed(6)} RMB`;
       elements.sourceResource.textContent = `NT$${money.format(value("resourceRate", FALLBACK.resourceRate))} / kg`;
       elements.currencyCaption.textContent = currencyLabels[elements.currencyMode.value] || currencyLabels.both;
 
@@ -1029,13 +1035,13 @@
           : "公開 E順遞價目表最高為 20 kg，請改用其他順豐產品或洽客服。";
       } else {
         const result = calculate(destination.zone, weight.charged);
-        const rmb = rmbBreakdown(result);
+        const rmb = rmbBreakdown(destination.zone, weight.charged);
         elements.resultLabel.textContent = `E順遞 · ${destination.zone}區 · 計費 ${weight.charged} kg`;
         elements.resultTotal.textContent = `NT$${money.format(result.total)}`;
-        elements.resultTotalRmb.textContent = `約 RMB ${rmbMoney.format(rmb.total)}`;
-        elements.resultBase.innerHTML = currencyCell(result.baseNet, rmb.base);
-        elements.resultFuel.innerHTML = currencyCell(result.fuelNet, rmb.fuel);
-        elements.resultResource.innerHTML = currencyCell(result.resourceNet, rmb.resource);
+        elements.resultTotalRmb.textContent = rmb ? `RMB ${rmbMoney.format(rmb.total)}` : "RMB 尚未同步";
+        elements.resultBase.innerHTML = currencyCell(result.baseNet, rmb?.base);
+        elements.resultFuel.innerHTML = currencyCell(result.fuelNet, rmb?.fuel);
+        elements.resultResource.innerHTML = currencyCell(result.resourceNet, rmb?.resource);
         const shippingText = elements.shippingDateTime.value
           ? new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(elements.shippingDateTime.value))
           : "未指定";
@@ -1052,13 +1058,13 @@
         const weight = (index + 1) / 2;
         const a = calculate("A", weight);
         const b = calculate("B", weight);
-        const ar = rmbBreakdown(a);
-        const br = rmbBreakdown(b);
+        const ar = rmbBreakdown("A", weight);
+        const br = rmbBreakdown("B", weight);
         rows.push(`
           <tr class="${weight === selectedWeight ? "selected" : ""}">
             <td>${weight.toFixed(1)}</td>
-            <td class="zone-a-cell">${currencyCell(a.baseNet, ar.base)}</td><td class="zone-a-cell">${currencyCell(a.fuelNet, ar.fuel)}</td><td class="zone-a-cell">${currencyCell(a.resourceNet, ar.resource)}</td><td class="zone-a-cell total-column">${currencyCell(a.total, ar.total)}</td>
-            <td class="zone-b-cell zone-divider">${currencyCell(b.baseNet, br.base)}</td><td class="zone-b-cell">${currencyCell(b.fuelNet, br.fuel)}</td><td class="zone-b-cell">${currencyCell(b.resourceNet, br.resource)}</td><td class="zone-b-cell total-column">${currencyCell(b.total, br.total)}</td>
+            <td class="zone-a-cell">${currencyCell(a.baseNet, ar?.base)}</td><td class="zone-a-cell">${currencyCell(a.fuelNet, ar?.fuel)}</td><td class="zone-a-cell">${currencyCell(a.resourceNet, ar?.resource)}</td><td class="zone-a-cell total-column">${currencyCell(a.total, ar?.total)}</td>
+            <td class="zone-b-cell zone-divider">${currencyCell(b.baseNet, br?.base)}</td><td class="zone-b-cell">${currencyCell(b.fuelNet, br?.fuel)}</td><td class="zone-b-cell">${currencyCell(b.resourceNet, br?.resource)}</td><td class="zone-b-cell total-column">${currencyCell(b.total, br?.total)}</td>
           </tr>`);
       }
       elements.rateTableBody.innerHTML = rows.join("");
@@ -1074,64 +1080,106 @@
       }).format(new Date(iso));
     }
 
-    async function syncLiveRates(force = false) {
+    async function syncAllRates(force = false) {
+      const syncId = ++syncSequence;
       elements.syncButton.disabled = true;
-      elements.syncButton.textContent = "正在連線順豐官網…";
+      elements.syncButton.textContent = "正在取得官方拆價…";
       elements.liveStatus.className = "live-dot warn";
       elements.liveStatus.textContent = "同步中";
+      elements.sourceRmb.textContent = "正在查詢 A／B 區 80 筆";
       elements.sourceNotice.classList.remove("show");
 
       try {
-        const response = await fetch(`/api/live-rates${force ? "?force=1" : ""}`, { cache: "no-store" });
-        if (!response.ok) throw new Error(`同步服務回傳 ${response.status}`);
-        const data = await response.json();
-        const warnings = [...(data.errors || [])];
+        const forceQuery = force ? "force=1" : "";
+        const rmbQuery = new URLSearchParams({ shippingDateTime: elements.shippingDateTime.value });
+        if (force) rmbQuery.set("force", "1");
+        const [liveResult, rmbResult] = await Promise.allSettled([
+          fetch(`/api/live-rates${forceQuery ? `?${forceQuery}` : ""}`, { cache: "no-store" }).then(async (response) => {
+            if (!response.ok) throw new Error(`基本資料服務回傳 ${response.status}`);
+            return response.json();
+          }),
+          fetch(`/api/rmb-rates?${rmbQuery}`, { cache: "no-store" }).then(async (response) => {
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.errors?.[0] || `人民幣查價服務回傳 ${response.status}`);
+            return data;
+          })
+        ]);
+        if (syncId !== syncSequence) return;
+        const warnings = [];
+        let liveOk = false;
+        let rmbOk = false;
 
-        if (data.fuel?.schedule?.length) {
-          fuelSchedule = data.fuel.schedule.map((item) => ({
+        if (liveResult.status === "fulfilled") {
+          const data = liveResult.value;
+          warnings.push(...(data.errors || []));
+          liveOk = Boolean(data.ok);
+          if (data.fuel?.schedule?.length) {
+            fuelSchedule = data.fuel.schedule.map((item) => ({
             start: item.startDate,
             end: item.endDate,
             rate: Number(item.rate)
-          })).filter((item) => item.start && item.end && Number.isFinite(item.rate));
-          applyFuelForShippingDate();
+            })).filter((item) => item.start && item.end && Number.isFinite(item.rate));
+          } else {
+            warnings.push("燃油費同步失敗，使用內建備援週期");
+          }
+          if (data.resource) elements.resourceRate.value = data.resource.perKg;
+          if (data.baseSource) {
+            elements.sourceBase.textContent = data.baseSource.effectiveDate;
+            if (!data.baseSource.expected) warnings.push("官網 E順遞價目表版本已改變，請更新內建基本運費");
+          }
+          if (data.checkedAt) elements.sourceChecked.textContent = formatChecked(data.checkedAt);
         } else {
-          warnings.push("燃油費同步失敗，使用內建備援週期");
-          applyFuelForShippingDate();
+          warnings.push(`基本資料同步失敗：${liveResult.reason.message}`);
+        }
+        applyFuelForShippingDate();
+
+        if (rmbResult.status === "fulfilled") {
+          const data = rmbResult.value;
+          officialRmbRates = data.rates || { A: {}, B: {} };
+          officialRmbMeta = data;
+          rmbOk = Boolean(data.ok);
+          elements.sourceRmb.textContent = `${data.count}/${data.expectedCount} 筆 · 官方到付價`;
+          elements.tableMode.textContent = data.ok ? "官方 RMB 到付價" : "部分 RMB 到付價";
+          if (data.checkedAt) elements.sourceChecked.textContent = formatChecked(data.checkedAt);
+          warnings.push(...(data.errors || []));
+        } else {
+          officialRmbRates = { A: {}, B: {} };
+          officialRmbMeta = { count: 0, expectedCount: 80, checkedAt: null, shippingTime: "" };
+          elements.sourceRmb.textContent = "同步失敗 · 不使用匯率估算";
+          warnings.push(`人民幣到付價同步失敗：${rmbResult.reason.message}`);
         }
 
-        if (data.resource) elements.resourceRate.value = data.resource.perKg;
-        if (data.baseSource) {
-          elements.sourceBase.textContent = data.baseSource.effectiveDate;
-          if (!data.baseSource.expected) warnings.push("官網 E順遞價目表版本已改變，請更新內建基本運費");
-        }
-
-        elements.sourceChecked.textContent = formatChecked(data.checkedAt);
-        elements.liveStatus.className = data.ok ? "live-dot live" : "live-dot warn";
-        elements.liveStatus.textContent = data.ok ? "官方已同步" : "部分備援";
+        elements.liveStatus.className = liveOk && rmbOk ? "live-dot live" : "live-dot warn";
+        elements.liveStatus.textContent = liveOk && rmbOk ? "官方已同步" : "部分同步";
 
         if (warnings.length) {
-          elements.sourceNotice.textContent = warnings.join("；");
+          elements.sourceNotice.textContent = warnings.slice(0, 6).join("；");
           elements.sourceNotice.classList.add("show");
         }
       } catch (error) {
+        if (syncId !== syncSequence) return;
         applyFuelForShippingDate();
+        officialRmbRates = { A: {}, B: {} };
         elements.liveStatus.className = "live-dot warn";
         elements.liveStatus.textContent = "使用備援";
         elements.tableMode.textContent = "離線備援資料";
+        elements.sourceRmb.textContent = "無法同步 · 不顯示估算";
         elements.sourceNotice.textContent = location.protocol === "file:"
-          ? "請使用 Windows 的 start.bat 或 macOS 的 start.command 啟動，直接開啟 HTML 無法跨網域同步順豐資料。"
-          : `同步失敗：${error.message}。目前使用內建備援週期。`;
+          ? "請使用 Windows 的 start.bat 或 macOS 的 start.command 啟動；直接開啟 HTML 只能計算台幣，無法取得官方人民幣到付價。"
+          : `同步失敗：${error.message}。台幣使用備援資料，人民幣不顯示估算值。`;
         elements.sourceNotice.classList.add("show");
       } finally {
-        elements.syncButton.disabled = false;
-        elements.syncButton.textContent = "立即同步順豐官網";
-        updateResult();
+        if (syncId === syncSequence) {
+          elements.syncButton.disabled = false;
+          elements.syncButton.textContent = "立即同步順豐官網";
+          updateResult();
+        }
       }
     }
 
     function saveSettings() {
       const settings = {};
-      ["destination","shippingDateTime","actualWeight","volumeDivisor","length","width","height","fuelRate","resourceRate","exchangeRate","currencyMode","baseDiscount","fuelDiscount","resourceDiscount","fuelBasis"].forEach((id) => {
+      ["destination","shippingDateTime","actualWeight","volumeDivisor","length","width","height","fuelRate","resourceRate","currencyMode","baseDiscount","fuelDiscount","resourceDiscount","fuelBasis"].forEach((id) => {
         settings[id] = elements[id].value;
       });
       localStorage.setItem("sf-e-rate-settings", JSON.stringify(settings));
@@ -1159,12 +1207,12 @@
         const weight = (index + 1) / 2;
         const a = calculate("A", weight);
         const b = calculate("B", weight);
-        const ar = rmbBreakdown(a);
-        const br = rmbBreakdown(b);
+        const ar = rmbBreakdown("A", weight);
+        const br = rmbBreakdown("B", weight);
         rows.push([
           weight.toFixed(1),
-          a.baseNet,ar.base,a.fuelNet,ar.fuel,a.resourceNet,ar.resource,a.total,ar.total,
-          b.baseNet,br.base,b.fuelNet,br.fuel,b.resourceNet,br.resource,b.total,br.total
+          a.baseNet,ar?.base ?? "",a.fuelNet,ar?.fuel ?? "",a.resourceNet,ar?.resource ?? "",a.total,ar?.total ?? "",
+          b.baseNet,br?.base ?? "",b.fuelNet,br?.fuel ?? "",b.resourceNet,br?.resource ?? "",b.total,br?.total ?? ""
         ]);
       }
       const csv = "\ufeff" + rows.map((row) => row.join(",")).join("\r\n");
@@ -1185,6 +1233,7 @@
     elements.shippingDateTime.addEventListener("change", () => {
       applyFuelForShippingDate();
       updateResult();
+      syncAllRates(false);
     });
     elements.fuelRate.addEventListener("change", () => {
       const period = selectedFuelPeriod();
@@ -1194,11 +1243,11 @@
       }
       updateResult();
     });
-    elements.syncButton.addEventListener("click", () => syncLiveRates(true));
+    elements.syncButton.addEventListener("click", () => syncAllRates(true));
     elements.csvButton.addEventListener("click", exportCsv);
     elements.printButton.addEventListener("click", () => window.print());
     updateResult();
-    syncLiveRates(false);
+    syncAllRates(false);
   </script>
 </body>
 </html>

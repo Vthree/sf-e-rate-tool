@@ -8,6 +8,22 @@ const FIRST_PORT = Number(process.env.PORT || 4173);
 let port = FIRST_PORT;
 const ROOT = __dirname;
 const CACHE_MS = 15 * 60 * 1000;
+const RMB_CACHE_MS = 6 * 60 * 60 * 1000;
+const RMB_RETRY_CACHE_MS = 10 * 60 * 1000;
+const SF_PRICE_ENDPOINT = "https://htm.sf-express.com/sf-service-core-web/service/product/psds/freightPrice/query";
+
+const RMB_ROUTES = {
+  A: {
+    label: "A區（廣州海珠代表）",
+    dest: "A440105000",
+    destCityCode: "020",
+  },
+  B: {
+    label: "B區（北京東城代表）",
+    dest: "A110101000",
+    destCityCode: "010",
+  },
+};
 
 const SOURCES = {
   fuel: "https://htm.sf-express.com/tw/tc/Customer_Zone/download_center/fuel_additional/",
@@ -16,6 +32,7 @@ const SOURCES = {
 };
 
 let liveCache = { expiresAt: 0, payload: null };
+const rmbCache = new Map();
 
 function stripHtml(value) {
   return value
@@ -117,6 +134,152 @@ async function fetchText(url) {
   return response.text();
 }
 
+async function fetchJson(url) {
+  const response = await fetch(url, {
+    headers: {
+      accept: "application/json, text/plain, */*",
+      "accept-language": "zh-TW,zh;q=0.9,en;q=0.7",
+      referer: "https://htm.sf-express.com/we/ow/#/tw/tc/price-query",
+      "user-agent": "Mozilla/5.0 SF-E-Rate-Tool/1.2",
+    },
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+}
+
+function normalizeShippingTime(value) {
+  const match = String(value || "").match(/^(20\d{2})-(\d{2})-(\d{2})[T ](\d{2})/);
+  if (match) return `${match[1]}-${match[2]}-${match[3]} ${match[4]}:00:00`;
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const hour = values.hour === "24" ? "00" : values.hour;
+  return `${values.year}-${values.month}-${values.day} ${hour}:00:00`;
+}
+
+function numberOrNull(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+async function fetchOfficialRmbRate(zone, weight, shippingTime) {
+  const route = RMB_ROUTES[zone];
+  const params = new URLSearchParams({
+    label: "1",
+    origin: "A000710900",
+    dest: route.dest,
+    originCityCode: "886",
+    destCityCode: route.destCityCode,
+    srcZoneCode: "",
+    destZoneCode: "",
+    weight: String(weight),
+    weightUnit: "kg",
+    postcode: "",
+    time: shippingTime,
+    width: "1",
+    height: "1",
+    length: "1",
+    lengthUnit: "",
+    lang: "tc",
+    region: "tw",
+    translate: "",
+    commodityName: "",
+    orderCount: "1",
+    destPostcode: "",
+    payMethod: "2",
+    paymentCountry: "CN",
+  });
+
+  const data = await fetchJson(`${SF_PRICE_ENDPOINT}?${params}`);
+  if (!data || data.code !== 0) throw new Error(data?.message || "順豐查價失敗");
+
+  const products = data.result?.productFreightPrices || [];
+  const product = products.find((item) => item.productCode === "EC-Ship")
+    || products.find((item) => item.productDisplayName === "E順遞");
+  if (!product) throw new Error("此路線沒有 E順遞到付價");
+
+  const items = product.freightPriceItemList || [];
+  const fuelItem = items.find((item) => item.code === "IN15" || /燃油/.test(item.name || ""));
+  const resourceItem = items.find((item) => item.code === "IN104" || /資源|調節/.test(item.name || ""));
+  const result = {
+    base: numberOrNull(product.freight),
+    fuel: numberOrNull(fuelItem?.price ?? product.fuelFreight),
+    resource: numberOrNull(resourceItem?.price ?? 0),
+    total: numberOrNull(product.totalFreight),
+    chargedWeight: numberOrNull(product.weight),
+    currency: product.currencyCode,
+  };
+  if ([result.base, result.fuel, result.resource, result.total].some((item) => item === null)) {
+    throw new Error("順豐回傳的 E順遞拆價不完整");
+  }
+  if (result.currency !== "CNY") throw new Error(`預期 CNY，實際為 ${result.currency || "未知"}`);
+  return result;
+}
+
+async function mapWithConcurrency(items, limit, worker) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  async function run() {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await worker(items[index]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, run));
+  return results;
+}
+
+async function getOfficialRmbRates(shippingDateTime, force = false) {
+  const shippingTime = normalizeShippingTime(shippingDateTime);
+  const cacheKey = shippingTime;
+  const cached = rmbCache.get(cacheKey);
+  if (!force && cached && Date.now() < cached.expiresAt) return cached.payload;
+
+  const jobs = [];
+  for (const zone of Object.keys(RMB_ROUTES)) {
+    for (let index = 1; index <= 40; index += 1) {
+      jobs.push({ zone, weight: index / 2 });
+    }
+  }
+
+  const rates = { A: {}, B: {} };
+  const errors = [];
+  await mapWithConcurrency(jobs, 4, async ({ zone, weight }) => {
+    try {
+      rates[zone][weight.toFixed(1)] = await fetchOfficialRmbRate(zone, weight, shippingTime);
+    } catch (error) {
+      errors.push(`${zone}區 ${weight.toFixed(1)}kg：${error.message}`);
+    }
+  });
+
+  const count = Object.values(rates).reduce((sum, zoneRates) => sum + Object.keys(zoneRates).length, 0);
+  const payload = {
+    ok: count === jobs.length,
+    checkedAt: new Date().toISOString(),
+    shippingTime,
+    count,
+    expectedCount: jobs.length,
+    routes: RMB_ROUTES,
+    rates,
+    source: SF_PRICE_ENDPOINT,
+    errors: errors.slice(0, 12),
+  };
+  rmbCache.set(cacheKey, {
+    payload,
+    expiresAt: Date.now() + (payload.ok ? RMB_CACHE_MS : RMB_RETRY_CACHE_MS),
+  });
+  return payload;
+}
+
 async function getLiveRates(force = false) {
   if (!force && liveCache.payload && Date.now() < liveCache.expiresAt) return liveCache.payload;
 
@@ -171,6 +334,19 @@ const server = http.createServer(async (request, response) => {
   if (url.pathname === "/api/live-rates") {
     try {
       sendJson(response, 200, await getLiveRates(url.searchParams.get("force") === "1"));
+    } catch (error) {
+      sendJson(response, 500, { ok: false, errors: [error.message] });
+    }
+    return;
+  }
+
+  if (url.pathname === "/api/rmb-rates") {
+    try {
+      const payload = await getOfficialRmbRates(
+        url.searchParams.get("shippingDateTime"),
+        url.searchParams.get("force") === "1",
+      );
+      sendJson(response, payload.count ? 200 : 502, payload);
     } catch (error) {
       sendJson(response, 500, { ok: false, errors: [error.message] });
     }
