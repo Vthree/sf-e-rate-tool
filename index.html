@@ -791,7 +791,7 @@
         <div class="result-card" aria-live="polite">
           <small id="resultLabel">E順遞 · 其他省份 · 1 kg</small>
           <div id="resultTotal" class="result-total">NT$284</div>
-          <div id="resultTotalRmb" class="result-rmb">約 RMB 61</div>
+          <div id="resultTotalRmb" class="result-rmb">約 RMB 61.6</div>
           <div class="result-breakdown">
             <div><span>折後運費</span><strong id="resultBase">199</strong></div>
             <div><span>燃油費</span><strong id="resultFuel">65</strong></div>
@@ -844,7 +844,7 @@
       </div>
       <div>
         <h3>資料與責任</h3>
-        <p>啟動 Windows 或 macOS 本機服務後，工具會從順豐官網抓取目前公布的燃油週期；同步失敗時才使用內建備援資料。人民幣依順豐頁面核對的換算因子估算，官方到付價採整數截尾；基本運費、調節費及最終收費仍以順豐收件時確認為準。</p>
+        <p>啟動 Windows 或 macOS 本機服務後，工具會從順豐官網抓取目前公布的燃油週期；同步失敗時才使用內建備援資料。人民幣各拆解項目保留小數點後一位，人民幣總運費為三項相加，因此可能與順豐網站顯示的整數到付價不同；最終收費仍以順豐結算為準。</p>
         <div class="source-links">
           <a href="https://htm.sf-express.com/tw/tc/Customer_Zone/download_center/fuel_additional/" target="_blank" rel="noreferrer">燃油附加費來源</a>
           <a href="https://htm.sf-express.com/tw/tc/Customer_Zone/download_center/price_down/" target="_blank" rel="noreferrer">E順遞價目表來源</a>
@@ -893,6 +893,7 @@
     ];
 
     const money = new Intl.NumberFormat("zh-TW", { maximumFractionDigits: 0 });
+    const rmbMoney = new Intl.NumberFormat("zh-TW", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const elements = Object.fromEntries([
       "destination","shippingDateTime","actualWeight","volumeDivisor","length","width","height","fuelRate","resourceRate","exchangeRate","currencyMode",
       "baseDiscount","fuelDiscount","resourceDiscount","fuelBasis","zoneHint","resultLabel","resultTotal","resultTotalRmb",
@@ -908,13 +909,22 @@
     function roundMoney(number) { return Math.round(Number(number) || 0); }
 
     function rmbValue(twd) {
-      return Math.floor(Math.max(0, Number(twd) || 0) * value("exchangeRate", FALLBACK.exchangeRate) + 1e-9);
+      const converted = Math.max(0, Number(twd) || 0) * value("exchangeRate", FALLBACK.exchangeRate);
+      return Math.round((converted + Number.EPSILON) * 10) / 10;
     }
 
-    function currencyCell(twd) {
+    function rmbBreakdown(result) {
+      const base = rmbValue(result.baseNet);
+      const fuel = rmbValue(result.fuelNet);
+      const resource = rmbValue(result.resourceNet);
+      const total = Math.round((base + fuel + resource + Number.EPSILON) * 10) / 10;
+      return { base, fuel, resource, total };
+    }
+
+    function currencyCell(twd, rmb = rmbValue(twd)) {
       const mode = elements.currencyMode.value;
       const twdText = money.format(twd);
-      const rmbText = `RMB ${money.format(rmbValue(twd))}`;
+      const rmbText = `RMB ${rmbMoney.format(rmb)}`;
       if (mode === "twd") return twdText;
       if (mode === "rmb") return rmbText;
       return `<span class="currency-pair"><span>${twdText}</span><span class="currency-secondary">${rmbText}</span></span>`;
@@ -1019,12 +1029,13 @@
           : "公開 E順遞價目表最高為 20 kg，請改用其他順豐產品或洽客服。";
       } else {
         const result = calculate(destination.zone, weight.charged);
+        const rmb = rmbBreakdown(result);
         elements.resultLabel.textContent = `E順遞 · ${destination.zone}區 · 計費 ${weight.charged} kg`;
         elements.resultTotal.textContent = `NT$${money.format(result.total)}`;
-        elements.resultTotalRmb.textContent = `約 RMB ${money.format(rmbValue(result.total))}`;
-        elements.resultBase.innerHTML = currencyCell(result.baseNet);
-        elements.resultFuel.innerHTML = currencyCell(result.fuelNet);
-        elements.resultResource.innerHTML = currencyCell(result.resourceNet);
+        elements.resultTotalRmb.textContent = `約 RMB ${rmbMoney.format(rmb.total)}`;
+        elements.resultBase.innerHTML = currencyCell(result.baseNet, rmb.base);
+        elements.resultFuel.innerHTML = currencyCell(result.fuelNet, rmb.fuel);
+        elements.resultResource.innerHTML = currencyCell(result.resourceNet, rmb.resource);
         const shippingText = elements.shippingDateTime.value
           ? new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(elements.shippingDateTime.value))
           : "未指定";
@@ -1041,11 +1052,13 @@
         const weight = (index + 1) / 2;
         const a = calculate("A", weight);
         const b = calculate("B", weight);
+        const ar = rmbBreakdown(a);
+        const br = rmbBreakdown(b);
         rows.push(`
           <tr class="${weight === selectedWeight ? "selected" : ""}">
             <td>${weight.toFixed(1)}</td>
-            <td class="zone-a-cell">${currencyCell(a.baseNet)}</td><td class="zone-a-cell">${currencyCell(a.fuelNet)}</td><td class="zone-a-cell">${currencyCell(a.resourceNet)}</td><td class="zone-a-cell total-column">${currencyCell(a.total)}</td>
-            <td class="zone-b-cell zone-divider">${currencyCell(b.baseNet)}</td><td class="zone-b-cell">${currencyCell(b.fuelNet)}</td><td class="zone-b-cell">${currencyCell(b.resourceNet)}</td><td class="zone-b-cell total-column">${currencyCell(b.total)}</td>
+            <td class="zone-a-cell">${currencyCell(a.baseNet, ar.base)}</td><td class="zone-a-cell">${currencyCell(a.fuelNet, ar.fuel)}</td><td class="zone-a-cell">${currencyCell(a.resourceNet, ar.resource)}</td><td class="zone-a-cell total-column">${currencyCell(a.total, ar.total)}</td>
+            <td class="zone-b-cell zone-divider">${currencyCell(b.baseNet, br.base)}</td><td class="zone-b-cell">${currencyCell(b.fuelNet, br.fuel)}</td><td class="zone-b-cell">${currencyCell(b.resourceNet, br.resource)}</td><td class="zone-b-cell total-column">${currencyCell(b.total, br.total)}</td>
           </tr>`);
       }
       elements.rateTableBody.innerHTML = rows.join("");
@@ -1146,10 +1159,12 @@
         const weight = (index + 1) / 2;
         const a = calculate("A", weight);
         const b = calculate("B", weight);
+        const ar = rmbBreakdown(a);
+        const br = rmbBreakdown(b);
         rows.push([
           weight.toFixed(1),
-          a.baseNet,rmbValue(a.baseNet),a.fuelNet,rmbValue(a.fuelNet),a.resourceNet,rmbValue(a.resourceNet),a.total,rmbValue(a.total),
-          b.baseNet,rmbValue(b.baseNet),b.fuelNet,rmbValue(b.fuelNet),b.resourceNet,rmbValue(b.resourceNet),b.total,rmbValue(b.total)
+          a.baseNet,ar.base,a.fuelNet,ar.fuel,a.resourceNet,ar.resource,a.total,ar.total,
+          b.baseNet,br.base,b.fuelNet,br.fuel,b.resourceNet,br.resource,b.total,br.total
         ]);
       }
       const csv = "\ufeff" + rows.map((row) => row.join(",")).join("\r\n");
