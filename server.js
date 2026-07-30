@@ -140,7 +140,7 @@ async function fetchJson(url) {
       accept: "application/json, text/plain, */*",
       "accept-language": "zh-TW,zh;q=0.9,en;q=0.7",
       referer: "https://htm.sf-express.com/we/ow/#/tw/tc/price-query",
-      "user-agent": "Mozilla/5.0 SF-E-Rate-Tool/1.2",
+      "user-agent": "Mozilla/5.0 SF-E-Rate-Tool/1.3.0",
     },
     signal: AbortSignal.timeout(15000),
   });

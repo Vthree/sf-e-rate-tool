@@ -370,6 +370,14 @@
       text-transform: uppercase;
     }
 
+    .result-net-label {
+      margin-top: 16px;
+      color: rgba(255,255,255,.58);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .12em;
+    }
+
     .result-total {
       margin: 8px 0 3px;
       font: 700 58px/1 var(--display);
@@ -377,11 +385,20 @@
     }
 
     .result-rmb {
-      margin: 0 0 18px;
+      margin: 12px 0 3px;
       color: rgba(255,255,255,.78);
       font: 700 27px/1.2 var(--display);
       letter-spacing: -.02em;
     }
+
+    .result-original,
+    .result-rmb-original {
+      color: rgba(255,255,255,.62);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .result-rmb-original { margin-bottom: 18px; }
 
     .result-breakdown {
       display: grid;
@@ -404,21 +421,43 @@
 
     .result-breakdown strong { font-size: 16px; }
 
-    .currency-pair {
+    .price-stack {
       display: inline-grid;
-      gap: 2px;
-      line-height: 1.15;
+      min-width: 86px;
+      gap: 3px;
+      line-height: 1.2;
       text-align: right;
     }
 
-    .currency-secondary {
-      color: var(--muted);
-      font-size: 10px;
-      font-weight: 800;
+    .price-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      white-space: nowrap;
     }
 
-    .result-breakdown .currency-pair { text-align: left; }
-    .result-breakdown .currency-secondary { color: rgba(255,255,255,.65); }
+    .price-line b {
+      color: var(--signal);
+      font-size: 8px;
+      letter-spacing: .05em;
+    }
+
+    .price-original {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .price-rmb {
+      margin-top: 2px;
+      padding-top: 3px;
+      border-top: 1px solid rgba(17,17,17,.12);
+      font-size: 10px;
+    }
+
+    .result-breakdown .price-stack { width: 100%; text-align: left; }
+    .result-breakdown .price-line b { color: rgba(255,255,255,.58); }
+    .result-breakdown .price-original { color: rgba(255,255,255,.62); }
+    .result-breakdown .price-rmb { border-top-color: rgba(255,255,255,.22); }
 
     .weight-note {
       margin: 14px 0 0;
@@ -685,7 +724,7 @@
       <div>
         <p class="eyebrow">Taiwan → Mainland China · E-Ship</p>
         <h1>E順遞<br>拆價運費表</h1>
-        <p class="deck">基本運費、燃油附加費、資源調節費各自成欄，各自設定折扣。啟動本機服務後會同步順豐官方資料；人民幣直接採用官網「到付價」拆解，不經台幣匯率換算。</p>
+        <p class="deck">基本運費與燃油附加費可分別設定折扣，資源調節費固定不折扣。原價與折後價同時顯示，折後金額如有小數一律向上進位；人民幣直接採用官網「到付價」拆解。</p>
       </div>
       <aside class="source-panel" aria-live="polite">
         <div class="source-heading">
@@ -771,10 +810,6 @@
               <input id="fuelDiscount" type="number" min="0" max="200" step="1" value="100">
               <b>%</b>
             </label>
-            <label class="unit-field">調節費折扣
-              <input id="resourceDiscount" type="number" min="0" max="200" step="1" value="100">
-              <b>%</b>
-            </label>
             <label>燃油計算基礎
               <select id="fuelBasis">
                 <option value="list">公開基本運費（不隨運費折扣）</option>
@@ -786,10 +821,13 @@
 
         <div class="result-card" aria-live="polite">
           <small id="resultLabel">E順遞 · 其他省份 · 1 kg</small>
+          <div class="result-net-label">折後總額</div>
           <div id="resultTotal" class="result-total">NT$284</div>
-          <div id="resultTotalRmb" class="result-rmb">RMB 正在同步</div>
+          <div id="resultTotalOriginal" class="result-original">原價 NT$284</div>
+          <div id="resultTotalRmb" class="result-rmb">折後 RMB 正在同步</div>
+          <div id="resultTotalRmbOriginal" class="result-rmb-original">原價 RMB 正在同步</div>
           <div class="result-breakdown">
-            <div><span>折後運費</span><strong id="resultBase">199</strong></div>
+            <div><span>基本運費</span><strong id="resultBase">199</strong></div>
             <div><span>燃油費</span><strong id="resultFuel">65</strong></div>
             <div><span>調節費</span><strong id="resultResource">20</strong></div>
           </div>
@@ -807,7 +845,7 @@
             <span id="tableMode" class="tag">寄件日官方燃油</span>
             <span class="zone-legend zone-legend-a">A區 · 暖紅</span>
             <span class="zone-legend zone-legend-b">B區 · 冷綠</span>
-            <span id="currencyCaption">人民幣為順豐官網到付價，已依目前折扣重算</span>
+            <span id="currencyCaption">各格同時顯示原價／折後價；折後小數無條件進位</span>
           </div>
           <div class="toolbar-actions">
             <button id="csvButton" class="ghost-button" type="button">匯出 CSV</button>
@@ -836,7 +874,7 @@
     <footer class="footnotes">
       <div>
         <h3>計費規則</h3>
-        <p>計費重量取實際重量與材積重量較大者；材積重量＝長×寬×高÷6000。20 kg 以下以 0.5 kg 進位。本工具依 E順遞公開價目表製作，最高顯示 20 kg。</p>
+        <p>計費重量取實際重量與材積重量較大者；材積重量＝長×寬×高÷6000。20 kg 以下以 0.5 kg 進位。基本運費及燃油費可分別折扣，資源調節費固定不折扣；折後金額如有小數，一律無條件進位至整數。</p>
       </div>
       <div>
         <h3>資料與責任</h3>
@@ -896,7 +934,7 @@
     const rmbMoney = new Intl.NumberFormat("zh-TW", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const elements = Object.fromEntries([
       "destination","shippingDateTime","actualWeight","volumeDivisor","length","width","height","fuelRate","resourceRate","currencyMode",
-      "baseDiscount","fuelDiscount","resourceDiscount","fuelBasis","zoneHint","resultLabel","resultTotal","resultTotalRmb",
+      "baseDiscount","fuelDiscount","fuelBasis","zoneHint","resultLabel","resultTotal","resultTotalOriginal","resultTotalRmb","resultTotalRmbOriginal",
       "resultBase","resultFuel","resultResource","weightNote","rateTableBody","syncButton","liveStatus",
       "sourceFuel","sourceResource","sourceRmb","sourceBase","sourceChecked","sourceNotice","tableMode","currencyCaption","csvButton","printButton"
     ].map((id) => [id, document.getElementById(id)]));
@@ -906,10 +944,8 @@
       return Number.isFinite(number) ? number : fallback;
     }
 
-    function roundMoney(number) { return Math.round(Number(number) || 0); }
-
-    function roundRmb(number) {
-      return Math.round((Math.max(0, Number(number) || 0) + Number.EPSILON) * 10) / 10;
+    function ceilMoney(number) {
+      return Math.ceil(Math.max(0, Number(number) || 0) - 1e-9);
     }
 
     function rmbBreakdown(zone, weight) {
@@ -918,23 +954,29 @@
 
       const baseFactor = value("baseDiscount", 100) / 100;
       const fuelFactor = value("fuelDiscount", 100) / 100;
-      const resourceFactor = value("resourceDiscount", 100) / 100;
       const discountedFuelFactor = elements.fuelBasis.value === "discounted" ? baseFactor : 1;
-      const base = roundRmb(source.base * baseFactor);
-      const fuel = roundRmb(source.fuel * fuelFactor * discountedFuelFactor);
-      const resource = roundRmb(source.resource * resourceFactor);
-      const unchanged = baseFactor === 1 && fuelFactor === 1 && resourceFactor === 1 && discountedFuelFactor === 1;
-      const total = unchanged ? roundRmb(source.total) : roundRmb(base + fuel + resource);
+      const fuelMultiplier = fuelFactor * discountedFuelFactor;
+      const base = baseFactor === 1 ? source.base : ceilMoney(source.base * baseFactor);
+      const fuel = fuelMultiplier === 1 ? source.fuel : ceilMoney(source.fuel * fuelMultiplier);
+      const resource = source.resource;
+      const unchanged = baseFactor === 1 && fuelMultiplier === 1;
+      const total = unchanged ? source.total : base + fuel + resource;
       return { base, fuel, resource, total, source };
     }
 
-    function currencyCell(twd, rmb) {
+    function priceCell(twdOriginal, twdNet, rmbOriginal, rmbNet) {
       const mode = elements.currencyMode.value;
-      const twdText = money.format(twd);
-      const rmbText = rmb == null ? "RMB —" : `RMB ${rmbMoney.format(rmb)}`;
-      if (mode === "twd") return twdText;
-      if (mode === "rmb") return rmbText;
-      return `<span class="currency-pair"><span>${twdText}</span><span class="currency-secondary">${rmbText}</span></span>`;
+      const twdLines = `
+        <span class="price-line"><b>折後</b><strong>NT$${money.format(twdNet)}</strong></span>
+        <span class="price-line price-original"><b>原價</b><span>NT$${money.format(twdOriginal)}</span></span>`;
+      const rmbNetText = rmbNet == null ? "RMB —" : `RMB ${rmbMoney.format(rmbNet)}`;
+      const rmbOriginalText = rmbOriginal == null ? "RMB —" : `RMB ${rmbMoney.format(rmbOriginal)}`;
+      const rmbLines = `
+        <span class="price-line price-rmb"><b>折後</b><strong>${rmbNetText}</strong></span>
+        <span class="price-line price-original"><b>原價</b><span>${rmbOriginalText}</span></span>`;
+      if (mode === "twd") return `<span class="price-stack">${twdLines}</span>`;
+      if (mode === "rmb") return `<span class="price-stack">${rmbLines}</span>`;
+      return `<span class="price-stack">${twdLines}${rmbLines}</span>`;
     }
 
     function localDateTimeValue(date = new Date()) {
@@ -991,11 +1033,27 @@
       if (!BASE_RATES[zone] || weight > 20) return null;
       const index = Math.max(0, Math.min(39, Math.round(weight * 2) - 1));
       const listBase = BASE_RATES[zone][index];
-      const baseNet = roundMoney(listBase * value("baseDiscount", 100) / 100);
+      const baseFactor = value("baseDiscount", 100) / 100;
+      const fuelFactor = value("fuelDiscount", 100) / 100;
+      const baseNet = baseFactor === 1 ? listBase : ceilMoney(listBase * baseFactor);
+      const fuelOriginal = ceilMoney(listBase * value("fuelRate", FALLBACK.fuelRate) / 100);
       const fuelBase = elements.fuelBasis.value === "discounted" ? baseNet : listBase;
-      const fuelNet = roundMoney(fuelBase * value("fuelRate", FALLBACK.fuelRate) / 100 * value("fuelDiscount", 100) / 100);
-      const resourceNet = roundMoney(weight * value("resourceRate", FALLBACK.resourceRate) * value("resourceDiscount", 100) / 100);
-      return { listBase, baseNet, fuelNet, resourceNet, total: baseNet + fuelNet + resourceNet };
+      const fuelNetRaw = fuelBase * value("fuelRate", FALLBACK.fuelRate) / 100 * fuelFactor;
+      const sameFuelPrice = elements.fuelBasis.value === "list" && fuelFactor === 1;
+      const fuelNet = sameFuelPrice ? fuelOriginal : ceilMoney(fuelNetRaw);
+      const resourceOriginal = ceilMoney(weight * value("resourceRate", FALLBACK.resourceRate));
+      const resourceNet = resourceOriginal;
+      const originalTotal = listBase + fuelOriginal + resourceOriginal;
+      return {
+        listBase,
+        baseNet,
+        fuelOriginal,
+        fuelNet,
+        resourceOriginal,
+        resourceNet,
+        originalTotal,
+        total: baseNet + fuelNet + resourceNet
+      };
     }
 
     function populateDestinations() {
@@ -1009,9 +1067,9 @@
       const weight = getChargeableWeight();
       const unavailable = destination.zone === "NONE" || weight.charged > 20;
       const currencyLabels = {
-        both: "新台幣依價目表計算；人民幣為順豐官網到付價，已依目前折扣重算",
-        twd: "金額單位：新台幣，已依目前折扣重算",
-        rmb: "金額單位：人民幣，來源為順豐官網到付價，已依目前折扣重算"
+        both: "新台幣＋官方人民幣；原價／折後價並列，折後小數無條件進位",
+        twd: "新台幣原價／折後價並列，折後小數無條件進位",
+        rmb: "官方人民幣原價／折後價並列，折後小數無條件進位"
       };
 
       elements.sourceResource.textContent = `NT$${money.format(value("resourceRate", FALLBACK.resourceRate))} / kg`;
@@ -1026,7 +1084,9 @@
       if (unavailable) {
         elements.resultLabel.textContent = `E順遞 · ${destination.name}`;
         elements.resultTotal.textContent = "不適用";
+        elements.resultTotalOriginal.textContent = "";
         elements.resultTotalRmb.textContent = "";
+        elements.resultTotalRmbOriginal.textContent = "";
         elements.resultBase.textContent = "—";
         elements.resultFuel.textContent = "—";
         elements.resultResource.textContent = "—";
@@ -1038,10 +1098,12 @@
         const rmb = rmbBreakdown(destination.zone, weight.charged);
         elements.resultLabel.textContent = `E順遞 · ${destination.zone}區 · 計費 ${weight.charged} kg`;
         elements.resultTotal.textContent = `NT$${money.format(result.total)}`;
-        elements.resultTotalRmb.textContent = rmb ? `RMB ${rmbMoney.format(rmb.total)}` : "RMB 尚未同步";
-        elements.resultBase.innerHTML = currencyCell(result.baseNet, rmb?.base);
-        elements.resultFuel.innerHTML = currencyCell(result.fuelNet, rmb?.fuel);
-        elements.resultResource.innerHTML = currencyCell(result.resourceNet, rmb?.resource);
+        elements.resultTotalOriginal.textContent = `原價 NT$${money.format(result.originalTotal)}`;
+        elements.resultTotalRmb.textContent = rmb ? `折後 RMB ${rmbMoney.format(rmb.total)}` : "折後 RMB 尚未同步";
+        elements.resultTotalRmbOriginal.textContent = rmb ? `原價 RMB ${rmbMoney.format(rmb.source.total)}` : "原價 RMB 尚未同步";
+        elements.resultBase.innerHTML = priceCell(result.listBase, result.baseNet, rmb?.source.base, rmb?.base);
+        elements.resultFuel.innerHTML = priceCell(result.fuelOriginal, result.fuelNet, rmb?.source.fuel, rmb?.fuel);
+        elements.resultResource.innerHTML = priceCell(result.resourceOriginal, result.resourceNet, rmb?.source.resource, rmb?.resource);
         const shippingText = elements.shippingDateTime.value
           ? new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(elements.shippingDateTime.value))
           : "未指定";
@@ -1063,8 +1125,8 @@
         rows.push(`
           <tr class="${weight === selectedWeight ? "selected" : ""}">
             <td>${weight.toFixed(1)}</td>
-            <td class="zone-a-cell">${currencyCell(a.baseNet, ar?.base)}</td><td class="zone-a-cell">${currencyCell(a.fuelNet, ar?.fuel)}</td><td class="zone-a-cell">${currencyCell(a.resourceNet, ar?.resource)}</td><td class="zone-a-cell total-column">${currencyCell(a.total, ar?.total)}</td>
-            <td class="zone-b-cell zone-divider">${currencyCell(b.baseNet, br?.base)}</td><td class="zone-b-cell">${currencyCell(b.fuelNet, br?.fuel)}</td><td class="zone-b-cell">${currencyCell(b.resourceNet, br?.resource)}</td><td class="zone-b-cell total-column">${currencyCell(b.total, br?.total)}</td>
+            <td class="zone-a-cell">${priceCell(a.listBase, a.baseNet, ar?.source.base, ar?.base)}</td><td class="zone-a-cell">${priceCell(a.fuelOriginal, a.fuelNet, ar?.source.fuel, ar?.fuel)}</td><td class="zone-a-cell">${priceCell(a.resourceOriginal, a.resourceNet, ar?.source.resource, ar?.resource)}</td><td class="zone-a-cell total-column">${priceCell(a.originalTotal, a.total, ar?.source.total, ar?.total)}</td>
+            <td class="zone-b-cell zone-divider">${priceCell(b.listBase, b.baseNet, br?.source.base, br?.base)}</td><td class="zone-b-cell">${priceCell(b.fuelOriginal, b.fuelNet, br?.source.fuel, br?.fuel)}</td><td class="zone-b-cell">${priceCell(b.resourceOriginal, b.resourceNet, br?.source.resource, br?.resource)}</td><td class="zone-b-cell total-column">${priceCell(b.originalTotal, b.total, br?.source.total, br?.total)}</td>
           </tr>`);
       }
       elements.rateTableBody.innerHTML = rows.join("");
@@ -1179,7 +1241,7 @@
 
     function saveSettings() {
       const settings = {};
-      ["destination","shippingDateTime","actualWeight","volumeDivisor","length","width","height","fuelRate","resourceRate","currencyMode","baseDiscount","fuelDiscount","resourceDiscount","fuelBasis"].forEach((id) => {
+      ["destination","shippingDateTime","actualWeight","volumeDivisor","length","width","height","fuelRate","resourceRate","currencyMode","baseDiscount","fuelDiscount","fuelBasis"].forEach((id) => {
         settings[id] = elements[id].value;
       });
       localStorage.setItem("sf-e-rate-settings", JSON.stringify(settings));
@@ -1199,8 +1261,14 @@
     function exportCsv() {
       const headers = [
         "重量(kg)",
-        "A區基本運費(TWD)","A區基本運費(RMB)","A區燃油費(TWD)","A區燃油費(RMB)","A區調節費(TWD)","A區調節費(RMB)","A區總運費(TWD)","A區總運費(RMB)",
-        "B區基本運費(TWD)","B區基本運費(RMB)","B區燃油費(TWD)","B區燃油費(RMB)","B區調節費(TWD)","B區調節費(RMB)","B區總運費(TWD)","B區總運費(RMB)"
+        "A區基本原價(TWD)","A區基本折後(TWD)","A區基本原價(RMB)","A區基本折後(RMB)",
+        "A區燃油原價(TWD)","A區燃油折後(TWD)","A區燃油原價(RMB)","A區燃油折後(RMB)",
+        "A區調節原價(TWD)","A區調節折後(TWD)","A區調節原價(RMB)","A區調節折後(RMB)",
+        "A區總額原價(TWD)","A區總額折後(TWD)","A區總額原價(RMB)","A區總額折後(RMB)",
+        "B區基本原價(TWD)","B區基本折後(TWD)","B區基本原價(RMB)","B區基本折後(RMB)",
+        "B區燃油原價(TWD)","B區燃油折後(TWD)","B區燃油原價(RMB)","B區燃油折後(RMB)",
+        "B區調節原價(TWD)","B區調節折後(TWD)","B區調節原價(RMB)","B區調節折後(RMB)",
+        "B區總額原價(TWD)","B區總額折後(TWD)","B區總額原價(RMB)","B區總額折後(RMB)"
       ];
       const rows = [headers];
       for (let index = 0; index < 40; index += 1) {
@@ -1211,8 +1279,14 @@
         const br = rmbBreakdown("B", weight);
         rows.push([
           weight.toFixed(1),
-          a.baseNet,ar?.base ?? "",a.fuelNet,ar?.fuel ?? "",a.resourceNet,ar?.resource ?? "",a.total,ar?.total ?? "",
-          b.baseNet,br?.base ?? "",b.fuelNet,br?.fuel ?? "",b.resourceNet,br?.resource ?? "",b.total,br?.total ?? ""
+          a.listBase,a.baseNet,ar?.source.base ?? "",ar?.base ?? "",
+          a.fuelOriginal,a.fuelNet,ar?.source.fuel ?? "",ar?.fuel ?? "",
+          a.resourceOriginal,a.resourceNet,ar?.source.resource ?? "",ar?.resource ?? "",
+          a.originalTotal,a.total,ar?.source.total ?? "",ar?.total ?? "",
+          b.listBase,b.baseNet,br?.source.base ?? "",br?.base ?? "",
+          b.fuelOriginal,b.fuelNet,br?.source.fuel ?? "",br?.fuel ?? "",
+          b.resourceOriginal,b.resourceNet,br?.source.resource ?? "",br?.resource ?? "",
+          b.originalTotal,b.total,br?.source.total ?? "",br?.total ?? ""
         ]);
       }
       const csv = "\ufeff" + rows.map((row) => row.join(",")).join("\r\n");
