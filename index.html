@@ -423,41 +423,40 @@
 
     .price-stack {
       display: inline-grid;
-      min-width: 86px;
-      gap: 3px;
-      line-height: 1.2;
+      min-width: 76px;
+      gap: 5px;
+      line-height: 1.15;
       text-align: right;
     }
 
-    .price-line {
-      display: flex;
-      justify-content: space-between;
-      gap: 6px;
+    .price-currency {
+      display: grid;
+      gap: 2px;
       white-space: nowrap;
     }
 
-    .price-line b {
-      color: var(--signal);
-      font-size: 8px;
-      letter-spacing: .05em;
+    .price-currency + .price-currency {
+      padding-top: 5px;
+      border-top: 1px solid rgba(17,17,17,.1);
+    }
+
+    .price-current {
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 900;
     }
 
     .price-original {
       color: var(--muted);
-      font-size: 10px;
+      font-size: 9px;
     }
 
-    .price-rmb {
-      margin-top: 2px;
-      padding-top: 3px;
-      border-top: 1px solid rgba(17,17,17,.12);
-      font-size: 10px;
-    }
+    .price-changed .price-current { color: var(--signal-dark); }
 
     .result-breakdown .price-stack { width: 100%; text-align: left; }
-    .result-breakdown .price-line b { color: rgba(255,255,255,.58); }
+    .result-breakdown .price-currency + .price-currency { border-top-color: rgba(255,255,255,.22); }
+    .result-breakdown .price-current { color: white; font-size: 14px; }
     .result-breakdown .price-original { color: rgba(255,255,255,.62); }
-    .result-breakdown .price-rmb { border-top-color: rgba(255,255,255,.22); }
 
     .weight-note {
       margin: 14px 0 0;
@@ -547,14 +546,14 @@
 
     table {
       width: 100%;
-      min-width: 960px;
+      min-width: 900px;
       border-collapse: separate;
       border-spacing: 0;
       font-size: 12px;
     }
 
     th, td {
-      padding: 11px 12px;
+      padding: 10px 9px;
       text-align: right;
       border-right: 1px solid var(--line-soft);
       border-bottom: 1px solid var(--line-soft);
@@ -821,7 +820,7 @@
 
         <div class="result-card" aria-live="polite">
           <small id="resultLabel">E順遞 · 其他省份 · 1 kg</small>
-          <div class="result-net-label">折後總額</div>
+          <div class="result-net-label">試算總額</div>
           <div id="resultTotal" class="result-total">NT$284</div>
           <div id="resultTotalOriginal" class="result-original">原價 NT$284</div>
           <div id="resultTotalRmb" class="result-rmb">折後 RMB 正在同步</div>
@@ -845,7 +844,7 @@
             <span id="tableMode" class="tag">寄件日官方燃油</span>
             <span class="zone-legend zone-legend-a">A區 · 暖紅</span>
             <span class="zone-legend zone-legend-b">B區 · 冷綠</span>
-            <span id="currencyCaption">各格同時顯示原價／折後價；折後小數無條件進位</span>
+            <span id="currencyCaption">主數字為應付價；有折扣差異時才顯示原價</span>
           </div>
           <div class="toolbar-actions">
             <button id="csvButton" class="ghost-button" type="button">匯出 CSV</button>
@@ -964,19 +963,31 @@
       return { base, fuel, resource, total, source };
     }
 
+    function samePrice(original, current) {
+      return original != null && current != null && Math.abs(Number(original) - Number(current)) < 1e-9;
+    }
+
+    function priceCurrency(original, current, currency) {
+      const formatter = currency === "twd" ? money : rmbMoney;
+      const prefix = currency === "twd" ? "NT$" : "RMB ";
+      const currentText = current == null ? `${prefix}—` : `${prefix}${formatter.format(current)}`;
+      const unchanged = samePrice(original, current);
+      const changed = original != null && current != null && !unchanged;
+      const originalLine = !unchanged && original != null
+        ? `<span class="price-original">原 ${prefix}${formatter.format(original)}</span>`
+        : "";
+      return `<span class="price-currency ${changed ? "price-changed" : ""}">
+        <strong class="price-current">${currentText}</strong>${originalLine}
+      </span>`;
+    }
+
     function priceCell(twdOriginal, twdNet, rmbOriginal, rmbNet) {
       const mode = elements.currencyMode.value;
-      const twdLines = `
-        <span class="price-line"><b>折後</b><strong>NT$${money.format(twdNet)}</strong></span>
-        <span class="price-line price-original"><b>原價</b><span>NT$${money.format(twdOriginal)}</span></span>`;
-      const rmbNetText = rmbNet == null ? "RMB —" : `RMB ${rmbMoney.format(rmbNet)}`;
-      const rmbOriginalText = rmbOriginal == null ? "RMB —" : `RMB ${rmbMoney.format(rmbOriginal)}`;
-      const rmbLines = `
-        <span class="price-line price-rmb"><b>折後</b><strong>${rmbNetText}</strong></span>
-        <span class="price-line price-original"><b>原價</b><span>${rmbOriginalText}</span></span>`;
-      if (mode === "twd") return `<span class="price-stack">${twdLines}</span>`;
-      if (mode === "rmb") return `<span class="price-stack">${rmbLines}</span>`;
-      return `<span class="price-stack">${twdLines}${rmbLines}</span>`;
+      const twdPrice = priceCurrency(twdOriginal, twdNet, "twd");
+      const rmbPrice = priceCurrency(rmbOriginal, rmbNet, "rmb");
+      if (mode === "twd") return `<span class="price-stack">${twdPrice}</span>`;
+      if (mode === "rmb") return `<span class="price-stack">${rmbPrice}</span>`;
+      return `<span class="price-stack">${twdPrice}${rmbPrice}</span>`;
     }
 
     function localDateTimeValue(date = new Date()) {
@@ -1067,9 +1078,9 @@
       const weight = getChargeableWeight();
       const unavailable = destination.zone === "NONE" || weight.charged > 20;
       const currencyLabels = {
-        both: "新台幣＋官方人民幣；原價／折後價並列，折後小數無條件進位",
-        twd: "新台幣原價／折後價並列，折後小數無條件進位",
-        rmb: "官方人民幣原價／折後價並列，折後小數無條件進位"
+        both: "新台幣＋官方人民幣；主數字為應付價，有差異才顯示原價",
+        twd: "新台幣應付價；有折扣差異時才顯示原價",
+        rmb: "官方人民幣應付價；有折扣差異時才顯示原價"
       };
 
       elements.sourceResource.textContent = `NT$${money.format(value("resourceRate", FALLBACK.resourceRate))} / kg`;
@@ -1098,9 +1109,13 @@
         const rmb = rmbBreakdown(destination.zone, weight.charged);
         elements.resultLabel.textContent = `E順遞 · ${destination.zone}區 · 計費 ${weight.charged} kg`;
         elements.resultTotal.textContent = `NT$${money.format(result.total)}`;
-        elements.resultTotalOriginal.textContent = `原價 NT$${money.format(result.originalTotal)}`;
-        elements.resultTotalRmb.textContent = rmb ? `折後 RMB ${rmbMoney.format(rmb.total)}` : "折後 RMB 尚未同步";
-        elements.resultTotalRmbOriginal.textContent = rmb ? `原價 RMB ${rmbMoney.format(rmb.source.total)}` : "原價 RMB 尚未同步";
+        const twdChanged = !samePrice(result.originalTotal, result.total);
+        const rmbChanged = rmb && !samePrice(rmb.source.total, rmb.total);
+        elements.resultTotalOriginal.textContent = twdChanged ? `原價 NT$${money.format(result.originalTotal)}` : "";
+        elements.resultTotalRmb.textContent = rmb
+          ? `${rmbChanged ? "折後 " : ""}RMB ${rmbMoney.format(rmb.total)}`
+          : "RMB 尚未同步";
+        elements.resultTotalRmbOriginal.textContent = rmbChanged ? `原價 RMB ${rmbMoney.format(rmb.source.total)}` : "";
         elements.resultBase.innerHTML = priceCell(result.listBase, result.baseNet, rmb?.source.base, rmb?.base);
         elements.resultFuel.innerHTML = priceCell(result.fuelOriginal, result.fuelNet, rmb?.source.fuel, rmb?.fuel);
         elements.resultResource.innerHTML = priceCell(result.resourceOriginal, result.resourceNet, rmb?.source.resource, rmb?.resource);
