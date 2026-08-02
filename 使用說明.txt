@@ -23,7 +23,8 @@ node --version
 5. 瀏覽器會自動開啟本機運費表。
 6. 使用期間請保持命令視窗開啟；按 Ctrl+C 可停止服務。
 
-若顯示「找不到 Node.js」，請安裝 Node.js LTS，安裝後關閉並重新開啟工具。
+若顯示「Node.js was not found」，請安裝 Node.js LTS，安裝後關閉並重新開啟工具。
+Windows 啟動腳本使用純英文 ASCII，不需要變更系統地區或開啟 UTF-8 相容模式。
 
 
 【macOS 使用方法】

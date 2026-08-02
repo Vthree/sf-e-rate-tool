@@ -33,7 +33,7 @@
 6. 瀏覽器會自動開啟 `http://127.0.0.1:4173`；若連接埠已被使用，會自動改用下一個連接埠。
 7. 保持命令視窗開啟；按 `Ctrl+C` 可停止服務。
 
-`start.ps1` 會先尋找系統中的 Node.js；若電腦是從 Codex 執行，也會嘗試使用 Codex 內附的 Node.js。
+`start.ps1` 會先尋找系統中的 Node.js；若電腦是從 Codex 執行，也會嘗試使用 Codex 內附的 Node.js。Windows 啟動腳本使用純英文 ASCII，不需要變更系統地區或開啟 UTF-8 相容模式。
 
 ## macOS 使用方法
 

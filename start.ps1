@@ -9,12 +9,11 @@ if ($nodeCommand) {
 }
 
 if (-not (Test-Path -LiteralPath $nodeExecutable)) {
-    Write-Host "找不到 Node.js。請先安裝 Node.js，或從 Codex 內啟動此工具。" -ForegroundColor Red
-    Read-Host "按 Enter 結束"
+    Write-Host "Node.js was not found. Install Node.js and try again." -ForegroundColor Red
+    Read-Host "Press Enter to exit"
     exit 1
 }
 
 Set-Location -LiteralPath $toolDirectory
 $env:OPEN_BROWSER = "1"
 & $nodeExecutable (Join-Path $toolDirectory "server.js")
-

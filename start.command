@@ -14,9 +14,9 @@ if [ -z "$NODE_BIN" ]; then
 fi
 
 if [ -z "$NODE_BIN" ]; then
-  echo "找不到 Node.js。請先從 https://nodejs.org/ 安裝 Node.js。"
+  echo "Node.js was not found. Install it from https://nodejs.org/."
   echo
-  read -r -p "按 Enter 結束"
+  read -r -p "Press Enter to exit"
   exit 1
 fi
 

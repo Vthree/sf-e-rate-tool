@@ -140,7 +140,7 @@ async function fetchJson(url) {
       accept: "application/json, text/plain, */*",
       "accept-language": "zh-TW,zh;q=0.9,en;q=0.7",
       referer: "https://htm.sf-express.com/we/ow/#/tw/tc/price-query",
-      "user-agent": "Mozilla/5.0 SF-E-Rate-Tool/1.3.1",
+      "user-agent": "Mozilla/5.0 SF-E-Rate-Tool/1.3.2",
     },
     signal: AbortSignal.timeout(15000),
   });
@@ -364,8 +364,8 @@ const server = http.createServer(async (request, response) => {
 
 function onListening() {
   const url = `http://${HOST}:${port}`;
-  console.log(`E順遞運費工具已啟動：${url}`);
-  console.log("按 Ctrl+C 可停止服務。");
+  console.log(`SF E-Ship rate tool started: ${url}`);
+  console.log("Press Ctrl+C to stop the server.");
 
   if (process.env.OPEN_BROWSER !== "0") {
     const browserCommand = process.platform === "win32"
